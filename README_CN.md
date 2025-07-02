@@ -93,54 +93,146 @@
 - 🚀 [2025.07.02] 发布 v1.1，支持 Demo 和样例数据
 - 🎥 Web Demo 与 Swift 全流程训练即将上线
 
+当然可以，以下是与你提供的英文版 `README` 内容**一一对应**的中文翻译版本，可直接命名为 `README_CN.md` 中的相关章节内容。
+
+---
+
+
 ## 🚀 快速导航
-| 部分 | 描述 | 快速链接 |
-|------|------|---------|
-| 环境配置 | 安装依赖与环境配置 | [前往安装](#️-开始使用) |
-| 训练启动 | Swift 训练脚本指南 | [运行训练](#训练启动) |
-| Demo 推理 | 启动实时推理演示 | [运行 Demo](#demo-推理) |
-| 基准测试 | 查看性能比较数据 | [查看结果](#-benchmark结果) |
 
-## ⚙️ 开始使用
+| 模块                | 描述                                   | 跳转链接                                  |
+|---------------------|----------------------------------------|-------------------------------------------|
+| 环境配置            | 安装依赖并配置环境                     | [环境配置](#环境配置)                     |
+| 启动训练            | 使用 Swift 进行 SFT/RLFT 训练          | [启动训练](#启动训练)                     |
+| Demo 推理           | 在测试集上运行推理脚本                 | [Demo 推理](#demo-推理)                   |
+| 评估与指标          | 使用 LLM-as-Judge 评估性能              | [评估与指标](#评估与指标)                 |
+| Benchmark 结果      | 与现有方法的性能对比                   | [Benchmark 结果](#benchmark-结果)         |
 
-### 环境配置
+---
+
+## 🛠️ 环境配置
+
+安装依赖并配置虚拟环境：
+
 ```bash
-# 创建 Python 虚拟环境
-python -m venv agentthink-env
-source agentthink-env/bin/activate
-
-# 安装核心依赖
-pip install torch==2.3.0 torchvision==0.18.0
+conda create -n agentthink python=3.10 -y
+conda activate agentthink
 pip install -r requirements.txt
+```
 
-# 安装工具库
-cd tools/occupancy_forecast
-python setup.py install
+如需使用 OpenAI 接口，请配置密钥：
 
-## 🛠️ Getting Started
-
-### 环境配置
 ```bash
-# 创建conda环境
+export OPENAI_API_KEY="你的密钥"
+export OPENAI_API_BASE="https://你的代理地址"
+```
+
+---
+
+## 🏋️ 启动训练
+
+单卡调试训练（设置模型路径、数据路径、输出路径）：
+
+```bash
+python train/sft_debug.py \
+  --model "/path/to/your/model" \
+  --dataset "/path/to/your/dataset" \
+  --output_dir "/path/to/output/directory"
+```
+
+多卡（≥8 张 GPU）训练脚本如下：
+
+```bash
+# 阶段1：监督微调（SFT）
+bash train/script/sft_drivelmm_8gpu.sh
+
+# 阶段2：强化学习微调（RLFT）
+bash train/script/rlft_drivelmm_8gpu.sh
+```
+
+---
+
+## 🎬 Demo 推理
+
+使用训练好的 checkpoint 进行测试集推理：
+
+```bash
+# 推理脚本
+bash scripts/inference_swift.sh [你的CKPT路径] [你的输出目录]
+```
+
+---
+
+## 📊 评估与指标
+
+使用 LLM-as-Judge 自动评估模型表现：
+
+```bash
+# 步骤1：评估推理能力与选择题准确率
+python evaluation/evaluation_reasoning_script.py
+
+# 步骤2：评估工具使用情况
+python evaluation/evaluation_tool_script.py
+```
+
+---
+
+## 🏆 Benchmark 结果
+
+查看 [Benchmark 结果](#benchmark-结果) 或论文海报，了解 AgentThink 在多个评测维度上的领先性能。
+
+
+## ⚙️ 环境配置
+### 基础环境
+| 组件 | 版本 | 验证命令 |
+|------|------|----------|
+| 操作系统 | Ubuntu 20.04 | `cat /etc/issue` |
+| Python | 3.10.12 | `python --version` |
+| CUDA Toolkit | 12.4 | `nvcc --version` |
+| GPU驱动 | 535.129.03 | `nvidia-smi | grep "Driver Version"` |
+| PyTorch | 2.6.0 | `print(torch.__version__)` |
+
+### 环境设置
+```bash
+# 创建虚拟环境
 conda create -n agentthink python=3.10
 conda activate agentthink
 
-# 安装基础依赖
+# 安装依赖
 pip install -r requirements.txt
 
-# 安装工具库依赖
-cd tools/visualization
-pip install -e .
+# 安装ms-swift
+bash scripts/env.sh
+
+# 安装drivemllm依赖
+bash scripts/env_drivemllm.sh
 ```
+
 
 ## 🚀快速上手
-### 推理demo
-```bash
-python AgentThink/Inference/inference_demo_data_drivemllm.json
+### 下载模型
+我们的AgentThink模型基于Qwen2.5-VL-7B[AgentThink](xx).
+
+### 下载工具模型
+Clone the depth anythingv2[DAM]: (https://github.com/DepthAnything/Depth-Anything-V2)
+```
+git clone https://github.com/DepthAnything/Depth-Anything-V2
 ```
 
-当然可以，以下是完整的 **Markdown 格式** 的 TODO List 部分内容，你可以直接复制粘贴到你的 README 文件中：
+Clone the YoloWorld[YoloWorld]: (https://github.com/AILab-CVC/YOLO-World)
+```
+git clone https://github.com/AILab-CVC/YOLO-World
+```
+Then download the pretrain models in the [YoloWorld](https://docs.ultralytics.com/zh/models/yolo-world/) and [DepthAnything](https://huggingface.co/depth-anything/Depth-Anything-V2-Base)
 
+### Demo
+```bash
+# drivemllm
+python Inference/inference_demo_drivemllm.py
+
+# drivelmm-o1
+python Inference/inference_demo_drivelmm.py
+```
 ---
 
 ## 📋 TODO 列表

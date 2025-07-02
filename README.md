@@ -91,15 +91,101 @@ Complementing the video, these visualizations demonstrate key capabilities:
 - 🚀 [2025.07.02] v1.1 released with demo and sample data
 - 🎥 Web Demo and Swift full training pipeline coming soon
 
+
 ## 🚀 Quick Navigation
-| Section | Description | Link |
-|--------|-------------|------|
-| Environment Setup | Install dependencies | [Setup Guide](#️-getting-started) |
-| Training | Swift training scripts | [Training](#training-launch) |
-| Demo | Real-time inference | [Run Demo](#demo-inference) |
-| Benchmarks | Performance comparison | [Results](#-benchmark-results) |
+
+| Section               | Description                            | Link                                  |
+|----------------------|----------------------------------------|---------------------------------------|
+| Environment Setup     | Install dependencies and setup         | [Environment Setup](#environment-setup) |
+| Training Launch       | Run SFT/RLFT with Swift                | [Training Launch](#training-launch)     |
+| Demo Inference        | Real-time inference on test set        | [Demo Inference](#demo-inference)       |
+| Evaluation & Metrics  | Scoring pipeline using LLM-as-Judge    | [Evaluation & Metrics](#evaluation--metrics) |
+| Benchmark Results     | Quantitative performance comparisons   | [Benchmark Results](#benchmark-results) |
+
+---
+
+## 🛠️ Environment Setup
+
+Install dependencies and prepare your environment:
+
+```bash
+conda create -n agentthink python=3.10 -y
+conda activate agentthink
+pip install -r requirements.txt
+```
+
+Set your OpenAI credentials (if needed):
+
+```bash
+export OPENAI_API_KEY="your-key"
+export OPENAI_API_BASE="https://your-endpoint"
+```
+
+---
+
+## 🏋️ Training Launch
+
+Set your model path, dataset path and output folder for single-GPU debug:
+
+```bash
+python train/sft_debug.py \
+  --model "/path/to/your/model" \
+  --dataset "/path/to/your/dataset" \
+  --output_dir "/path/to/output/directory"
+```
+
+For full training with multi-GPU (≥8 GPUs):
+
+```bash
+# Stage 1: Supervised Fine-Tuning (SFT)
+bash train/script/sft_drivelmm_8gpu.sh
+
+# Stage 2: Reinforcement Learning Fine-Tuning (RLFT)
+bash train/script/rlft_drivelmm_8gpu.sh
+```
+
+---
+
+## 🎬 Demo Inference
+
+Use your trained checkpoint to run inference on test samples:
+
+```bash
+# Inference script
+bash scripts/inference_swift.sh [your_CKPT_PATH] [your_OUTPUT_DIR]
+```
+
+---
+
+## 📊 Evaluation & Metrics
+
+Use LLM-as-Judge to calculate performance metrics:
+
+```bash
+# Step 1: Evaluate reasoning ability and MCQ accuracy
+python evaluation/evaluation_reasoning_script.py
+
+# Step 2: Evaluate tool use correctness
+python evaluation/evaluation_tool_script.py
+```
+
+---
+
+## 🏆 Benchmark Results
+
+See the [Results](#) section or poster for AgentThink’s SOTA performance.
+
+
 
 ## ⚙️ Getting Started
+### Basic
+| component | version | command |
+|------|------|----------|
+| os | Ubuntu 20.04 | `cat /etc/issue` |
+| Python | 3.10.12 | `python --version` |
+| CUDA Toolkit | 12.4 | `nvcc --version` |
+| GPU Driver | 535.129.03  | `nvidia-smi` | grep "Driver Version"` |
+| Pytorch| 2.6.0 | `print(torch.__version__)` |
 
 ### Environment Setup
 ```bash
@@ -110,15 +196,36 @@ conda activate agentthink
 # Install dependencies
 pip install -r requirements.txt
 
-# Install tool libraries
-cd tools/visualization
-pip install -e .
+# Install ms-swift
+bash scripts/env.sh
+
+# Install drivemllm dependency
+bash scripts/env_drivemllm.sh
 ```
 
 ## 🚀 Quick Start
+### Download the model
+Our AgentThink[AgentThink](xx) model based on the Qwen2.5-VL-7B.
+
+### Download the tool model
+Clone the depth anythingv2[DAM]: (https://github.com/DepthAnything/Depth-Anything-V2)
+```
+git clone https://github.com/DepthAnything/Depth-Anything-V2
+```
+
+Clone the YoloWorld[YoloWorld]: (https://github.com/AILab-CVC/YOLO-World)
+```
+git clone https://github.com/AILab-CVC/YOLO-World
+```
+Then download the pretrain models in the [YoloWorld](https://docs.ultralytics.com/zh/models/yolo-world/) and [DepthAnything](https://huggingface.co/depth-anything/Depth-Anything-V2-Base)
+
 ### Demo Inference
 ```bash
-python AgentThink/Inference/inference_demo_data_drivemllm.json
+# drivemllm
+python Inference/inference_demo_drivemllm.py
+
+# drivelmm-o1
+python Inference/inference_demo_drivelmm.py
 ```
 
 ## 📋 TODO List
