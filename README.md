@@ -114,7 +114,7 @@ conda activate agentthink
 pip install -r requirements.txt
 ```
 
-Set your OpenAI credentials (if needed):
+Set your OpenAI credentials:
 
 ```bash
 export OPENAI_API_KEY="your-key"
@@ -201,6 +201,12 @@ bash scripts/env.sh
 
 # Install drivemllm dependency
 bash scripts/env_drivemllm.sh
+```
+
+### Clone ms-swift
+```bash
+cd third_party
+git clone https://github.com/modelscope/ms-swift.git
 ```
 
 ## 🚀 Quick Start

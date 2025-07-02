@@ -120,7 +120,7 @@ conda activate agentthink
 pip install -r requirements.txt
 ```
 
-如需使用 OpenAI 接口，请配置密钥：
+使用 OpenAI 接口，请配置密钥：
 
 ```bash
 export OPENAI_API_KEY="你的密钥"
@@ -208,6 +208,11 @@ bash scripts/env.sh
 bash scripts/env_drivemllm.sh
 ```
 
+### 克隆ms-swift
+```bash
+cd third_party
+git clone https://github.com/modelscope/ms-swift.git
+```
 
 ## 🚀快速上手
 ### 下载模型
