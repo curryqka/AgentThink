@@ -37,10 +37,7 @@
   </a>
 </p> -->
 <p align="center">
-  <video width="640" controls>
-    <source src="assets/demo_video.mp4" type="video/mp4">
-    Your browser does not support the video tag.
-  </video>
+  <img src="assets/demo.gif" alt="Demo GIF" width="640"/>
 </p>
 
 

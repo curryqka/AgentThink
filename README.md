@@ -30,12 +30,16 @@ Experience AgentThink's real-world performance through our demonstration materia
 
 Watch this video to see AgentThink's environmental perception in complex traffic conditions:
 
-<p align="center">
+<!-- <p align="center">
   <video width="640" controls>
     <source src="assets/demo.mp4" type="video/mp4">
     Your browser does not support the video tag.
   </video>
+</p> -->
+<p align="center">
+  <img src="assets/demo.gif" alt="Demo GIF" width="640"/>
 </p>
+
 
 > **Tip**: Click the image to play. For alternative viewing options, visit our [Bilibili](#) channel.
 
