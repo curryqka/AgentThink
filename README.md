@@ -1,4 +1,4 @@
-# AgentThink: A Tool-Augmented Visual Language Reasoning Framework for Autonomous Driving
+# AgentThink: A Unified Framework for Tool-Augmented Chain-of-Thought Reasoning in Vision-Language Models for Autonomous Driving
 
 
 
@@ -31,9 +31,10 @@ Experience AgentThink's real-world performance through our demonstration materia
 Watch this video to see AgentThink's environmental perception in complex traffic conditions:
 
 <p align="center">
-  <a href="https://youtu.be/your_video_id" target="_blank">
-    <img src="assets/thumbnail_agentthink_demo.png" alt="AgentThink Demo Video Thumbnail" width="640"/>
-  </a>
+  <video width="640" controls>
+    <source src="assets/demo.mp4" type="video/mp4">
+    Your browser does not support the video tag.
+  </video>
 </p>
 
 > **Tip**: Click the image to play. For alternative viewing options, visit our [Bilibili](#) channel.

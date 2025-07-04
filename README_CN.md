@@ -31,11 +31,18 @@
 
 请观看以下视频以了解AgentThink在复杂交通环境中的环境认知过程：
 
-<p align="center">
+<!-- <p align="center">
   <a href="https://youtu.be/your_video_id" target="_blank">
     <img src="assets/thumbnail_agentthink_demo.png" alt="AgentThink Demo Video Thumbnail" width="640"/>
   </a>
+</p> -->
+<p align="center">
+  <video width="640" controls>
+    <source src="assets/demo_video.mp4" type="video/mp4">
+    Your browser does not support the video tag.
+  </video>
 </p>
+
 
 > **提示**: 点击上方图片播放视频。如果您无法查看YouTube链接，请访问我们的[B站](#)频道获取更多观看选项。
 
