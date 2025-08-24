@@ -92,7 +92,7 @@
 </div>
 
 ## 📰 项目动态
-
+- 🎉 [2025.08.20] AgentThink 被 EMNLP2025 Fundings 接收
 - 📄 [2025.05.22] AgentThink 论文发布于 arXiv
 - 🚀 [2025.07.02] 发布 v1.1，支持 Demo 和样例数据
 - 🎥 Web Demo 与 Swift 全流程训练即将上线
@@ -119,16 +119,18 @@
 安装依赖并配置虚拟环境：
 
 ```bash
-conda create -n agentthink python=3.10 -y
+# 创建虚拟环境
+conda create -n agentthink python=3.10
 conda activate agentthink
+
+# 安装依赖
 pip install -r requirements.txt
-```
 
-使用 OpenAI 接口，请配置密钥：
+# 安装ms-swift
+bash scripts/env.sh
 
-```bash
-export OPENAI_API_KEY="你的密钥"
-export OPENAI_API_BASE="https://你的代理地址"
+# 安装drivemllm依赖
+bash scripts/env_drivemllm.sh
 ```
 
 ---

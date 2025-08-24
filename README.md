@@ -91,9 +91,9 @@ Complementing the video, these visualizations demonstrate key capabilities:
 </div>
 
 ## 📰 Project Updates
-
-- 📄 [2025.05.22] Paper published on arXiv
+- 🎉 [2025.08.20] Our paper was accepted as EMNLP2025 Fundings
 - 🚀 [2025.07.02] v1.1 released with demo and sample data
+- 📄 [2025.05.22] Paper published on arXiv
 - 🎥 Web Demo and Swift full training pipeline coming soon
 
 
@@ -114,16 +114,18 @@ Complementing the video, these visualizations demonstrate key capabilities:
 Install dependencies and prepare your environment:
 
 ```bash
-conda create -n agentthink python=3.10 -y
+# Create virtual environment
+conda create -n agentthink python=3.10
 conda activate agentthink
+
+# Install dependencies
 pip install -r requirements.txt
-```
 
-Set your OpenAI credentials:
+# Install ms-swift
+bash scripts/env.sh
 
-```bash
-export OPENAI_API_KEY="your-key"
-export OPENAI_API_BASE="https://your-endpoint"
+# Install drivemllm dependency
+bash scripts/env_drivemllm.sh
 ```
 
 ---
