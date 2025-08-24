@@ -1,173 +1,205 @@
+# Copyright (c) Kangan Qian. All rights reserved.
+# Authors: Kangan Qian (Tsinghua University, Xiaomi Corporation)
+# Description: 3D location estimation from 2D images using depth estimation
+
 import cv2
 import numpy as np
 import torch
-
+import matplotlib.pyplot as plt
+from PIL import Image
 from third_party.DAM.depth_anything_v2.dpt import DepthAnythingV2
 from third_party.yoloworld_demo import get_2dloc_open_vocabulary_detector
-import matplotlib.pyplot as plt
 
-def pixel_to_3d(depth_map, camera_intrinsic, pixel):
+
+def calculate_average_depth(depth_map: np.ndarray, center_pixel: tuple, neighborhood_size: int = 5) -> float:
     """
-    根据深度图和相机内参，将 2D 像素点转换为 3D 坐标。
-
+    Calculate the average depth value around a specified pixel
+    
     Args:
-        depth_map (numpy.ndarray): 深度图。
-        camera_intrinsic (numpy.ndarray): 相机内参矩阵，格式为 4x4。
-        pixel (tuple): 像素点坐标 (i, j)，其中 i 为行索引 j 为列索引。
-
+        depth_map (np.ndarray): HxW depth map
+        center_pixel (tuple): (x, y) coordinates of the center pixel
+        neighborhood_size (int): Size of the neighborhood area (default: 5x5)
+        
     Returns:
-        tuple: 3D 坐标 (X, Y, Z)，以米为单位。
+        float: Average depth value in the neighborhood
     """
-    # 获取像素点的深度值
-    i, j = pixel
-    D = depth_map[j, i]
+    half_size = neighborhood_size // 2
+    x, y = center_pixel
+    
+    # Ensure boundaries are within image dimensions
+    x_start = max(0, x - half_size)
+    x_end = min(depth_map.shape[1], x + half_size + 1)
+    y_start = max(0, y - half_size)
+    y_end = min(depth_map.shape[0], y + half_size + 1)
+    
+    # Extract neighborhood depths
+    neighborhood_depths = depth_map[y_start:y_end, x_start:x_end]
+    
+    # Calculate average depth ignoring zero values
+    valid_depths = neighborhood_depths[neighborhood_depths != 0]
+    if valid_depths.size == 0:
+        return 0.0
+    
+    return np.mean(valid_depths)
 
-    def get_average_depth(depth_map, center_pixel, neighborhood_size=5):
-        """
-        计算给定点周围区域的平均深度值。
-        
-        :param depth_map: HxW 的原始深度图。
-        :param center_pixel: (x, y) 中心点坐标。
-        :param neighborhood_size: 周围区域的大小，默认为5x5。
-        :return: 平均深度值。
-        """
-        half_size = neighborhood_size // 2
-        x, y = center_pixel
-        # 确保不超出边界
-        x_start = max(0, x - half_size)
-        x_end = min(depth_map.shape[1], x + half_size + 1)
-        y_start = max(0, y - half_size)
-        y_end = min(depth_map.shape[0], y + half_size + 1)
 
-        neighborhood_depths = depth_map[y_start:y_end, x_start:x_end]
-        average_depth = np.mean(neighborhood_depths[neighborhood_depths != 0]) # 忽略零值
+def pixel_to_3d_coordinates(
+        depth_map: np.ndarray, 
+        camera_intrinsic: np.ndarray, 
+        pixel: tuple
+    ) -> tuple:
+    """
+    Convert 2D pixel coordinates to 3D world coordinates using depth map and camera intrinsics
+    
+    Args:
+        depth_map (np.ndarray): Depth map in meters
+        camera_intrinsic (np.ndarray): 4x4 camera intrinsic matrix
+        pixel (tuple): Pixel coordinates (x, y)
         
-        return average_depth if not np.isnan(average_depth) else 0
-    # breakpoint()
-    avg_depth = get_average_depth(depth_map=depth_map, center_pixel=pixel)
+    Returns:
+        tuple: 3D coordinates (X, Y, Z) in camera coordinate system
+    """
+    x, y = pixel
+    
+    # Calculate average depth in neighborhood for robustness
+    avg_depth = calculate_average_depth(depth_map, pixel)
     if avg_depth != 0:
         D = avg_depth
-
-    # 从相机内参矩阵中提取焦距和主点坐标
+    else:
+        D = depth_map[y, x]
+    
+    # Extract camera intrinsic parameters
     fx = camera_intrinsic[0, 0]
     fy = camera_intrinsic[1, 1]
     u0 = camera_intrinsic[0, 2]
     v0 = camera_intrinsic[1, 2]
-
-    # 计算相机坐标系中的坐标
-    X_cam = (i - u0) * D / fx
-    Y_cam = (j - v0) * D / fy
+    
+    # Calculate 3D coordinates in camera frame
+    X_cam = (x - u0) * D / fx
+    Y_cam = (y - v0) * D / fy
     Z_cam = D
-
-    # 返回相机坐标系中的 3D 坐标
+    
     return X_cam, Y_cam, Z_cam
 
-def get_3d_location(text=['car'], image_path=None, debug=False):
-    height, width = 900, 1600
-    camera_intrinsic = np.array(
-        [[1.25281310e+03, 0.00000000e+00, 8.26588115e+02, 0.00000000e+00],
-    [0.00000000e+00, 1.25281310e+03, 4.69984663e+02, 0.00000000e+00],
-    [0.00000000e+00, 0.00000000e+00, 1.00000000e+00, 0.00000000e+00],
-    [0.00000000e+00, 0.00000000e+00, 0.00000000e+00, 1.00000000e+00]],
 
-    )
-
-    model_path = '/high_perf_store/mlinfra-vepfs/qiankangan/Drive-MLLM-main/third_party/ckpt/depth_anything_v2_vitb.pth'
-    # model_path = '/high_perf_store/mlinfra-vepfs/qiankangan/Drive-MLLM-main/third_party/ckpt/depth_anything_v2_vitl.pth'
-    # model_path = '/high_perf_store/mlinfra-vepfs/qiankangan/Drive-MLLM-main/third_party/ckpt/depth_anything_v2_vits.pth'
-
-    encoder = 'vitb'
+def get_3d_location(
+        text: list = ['car'], 
+        image_path: str = None, 
+        debug: bool = False,
+        model_path: str = "./pretrained_models/depth_anything_v2_vitb.pth",
+        encoder_type: str = "vitb",
+        camera_intrinsic: np.ndarray = None
+    ) -> tuple:
+    """
+    Estimate 3D locations of objects in an image
+    
+    Args:
+        text (list): List of object names to locate
+        image_path (str): Path to input image
+        debug (bool): Whether to save debug visualization
+        model_path (str): Path to depth estimation model
+        encoder_type (str): Encoder type for depth model
+        camera_intrinsic (np.ndarray): Camera intrinsic matrix
+        
+    Returns:
+        tuple: 
+            - prompt (str): Description of 3D locations
+            - spatial_location (list): List of 3D coordinates for each object
+    """
+    # Default camera intrinsic matrix if not provided
+    if camera_intrinsic is None:
+        camera_intrinsic = np.array([
+            [1.25281310e+03, 0.00000000e+00, 8.26588115e+02, 0.00000000e+00],
+            [0.00000000e+00, 1.25281310e+03, 4.69984663e+02, 0.00000000e+00],
+            [0.00000000e+00, 0.00000000e+00, 1.00000000e+00, 0.00000000e+00],
+            [0.00000000e+00, 0.00000000e+00, 0.00000000e+00, 1.00000000e+00]
+        ])
+    
+    # Configure depth model based on encoder type
     model_configs = {
         'vits': {'encoder': 'vits', 'features': 64, 'out_channels': [48, 96, 192, 384]},
         'vitb': {'encoder': 'vitb', 'features': 128, 'out_channels': [96, 192, 384, 768]},
         'vitl': {'encoder': 'vitl', 'features': 256, 'out_channels': [256, 512, 1024, 1024]},
         'vitg': {'encoder': 'vitg', 'features': 384, 'out_channels': [1536, 1536, 1536, 1536]}
     }
-
-    model = DepthAnythingV2(**model_configs[encoder]).to('cuda')
+    
+    # Initialize and load depth estimation model
+    model = DepthAnythingV2(**model_configs[encoder_type]).to('cuda')
     model.load_state_dict(torch.load(model_path))
     model.eval()
-
-
-    # "location2D": [[1164.0, 627.0]], "location3D": [[1.964, 0.786, 8.525]]
+    
+    # Load and process image
     raw_img = cv2.imread(image_path)
-    depth = model.infer_image(raw_img) # HxW raw depth map
-    # 获取深度图的最大值
-    max_depth = np.max(depth)
-
-    # 反转深度图（如果需要）
-    depth = max_depth - depth
+    depth_map = model.infer_image(raw_img)  # HxW depth map
+    
+    # Invert depth map if needed (depends on model output)
+    max_depth = np.max(depth_map)
+    depth_map = max_depth - depth_map
+    
+    # Save debug visualization if requested
     if debug:
-        plt.imshow(depth, cmap='jet')
+        plt.imshow(depth_map, cmap='jet')
         plt.colorbar()
         plt.title("Predicted Depth Map")
-        plt.savefig("/high_perf_store/mlinfra-vepfs/qiankangan/Drive-MLLM-main/third_party/debug_depth.png")
+        plt.savefig("./debug/debug_depth.png")
+    
+    # Process each object
     prompt = ""
     spatial_location = []
     for obj in text:
-        obj = [obj]
-        loc2d_prompt, location_2d = get_2dloc_open_vocabulary_detector(text=obj, image_path=image_path)
-
+        # Get 2D location using open-vocabulary detector
+        loc2d_prompt, location_2d = get_2dloc_open_vocabulary_detector(
+            text=[obj], 
+            image_path=image_path
+        )
+        
         prompt += loc2d_prompt
+        
+        # Handle case where 2D location not found
         if location_2d is None:
-            prompt += f"The 3d location of {obj} in camera-axis fails to get, you must infer or identify them yourself."
+            prompt += f"\nFailed to estimate 3D location for {obj}. You must infer or identify it yourself."
             continue
-
+        
+        # Convert to integer pixel coordinates
         pixel = [int(round(coord)) for coord in location_2d]
-
-        # 转换为 3D 坐标
-        X, Y, Z = pixel_to_3d(depth, camera_intrinsic, pixel)
-
+        
+        # Calculate 3D coordinates
+        X, Y, Z = pixel_to_3d_coordinates(depth_map, camera_intrinsic, pixel)
         spatial_location.append([X, Y, Z])
-        prompt += f"The 3d location of {obj[0]} in camera-axis is {[X, Y, Z]}"
+        
+        prompt += f"\nEstimated 3D location for {obj} in camera coordinates: [{X:.2f}, {Y:.2f}, {Z:.2f}]"
+    
     return prompt, spatial_location
-# 示例用法
-if __name__ == "__main__":
-    # 生成一个示例深度图（单位：米）
-    height, width = 900, 1600
-    # depth_map = np.random.rand(height, width) * 5.0  # 深度范围为 0 到 5 米
-
-    # 提取相机内参矩阵中的焦距和主点坐标
-    # camera_intrinsic = np.array(
-    #     [[1.25674851e+03, 0.00000000e+00, 8.17788757e+02, 0.00000000e+00],
-    #     [0.00000000e+00, 1.25674851e+03, 4.51954178e+02, 0.00000000e+00], 
-    #     [0.00000000e+00, 0.00000000e+00, 1.00000000e+00, 0.00000000e+00], 
-    #     [0.00000000e+00, 0.00000000e+00, 0.00000000e+00, 1.00000000e+00]],
-    # )
-    camera_intrinsic = np.array(
-        [[1.25281310e+03, 0.00000000e+00, 8.26588115e+02, 0.00000000e+00],
-    [0.00000000e+00, 1.25281310e+03, 4.69984663e+02, 0.00000000e+00],
-    [0.00000000e+00, 0.00000000e+00, 1.00000000e+00, 0.00000000e+00],
-    [0.00000000e+00, 0.00000000e+00, 0.00000000e+00, 1.00000000e+00]],
-
-    )
 
 
-    # model_path = '/mnt/netdata/Team/AI/personal/qiankangan/VLM_ckpt/DEM/Depth-Anything-V2-Small/depth_anything_v2_vits.pth'
-    model_path = '/high_perf_store/mlinfra-vepfs/qiankangan/Drive-MLLM-main/third_party/ckpt/depth_anything_v2_vitb.pth'
-    image_path = 'nuscenes_CAM_FRONT_5978.webp'
-
-    encoder = 'vitb'
-    model_configs = {
-        'vits': {'encoder': 'vits', 'features': 64, 'out_channels': [48, 96, 192, 384]},
-        'vitb': {'encoder': 'vitb', 'features': 128, 'out_channels': [96, 192, 384, 768]},
-        'vitl': {'encoder': 'vitl', 'features': 256, 'out_channels': [256, 512, 1024, 1024]},
-        'vitg': {'encoder': 'vitg', 'features': 384, 'out_channels': [1536, 1536, 1536, 1536]}
-    }
-
-    model = DepthAnythingV2(**model_configs[encoder]).to('cuda')
+if __name__ == '__main__':
+    # Example usage
+    image_path = "./third_party/nuscenes_CAM_FRONT_5978.webp"
+    model_path = "./pretrained_models/depth_anything_v2_vitb.pth"
+    
+    # Camera intrinsic matrix
+    camera_intrinsic = np.array([
+        [1.25281310e+03, 0.00000000e+00, 8.26588115e+02, 0.00000000e+00],
+        [0.00000000e+00, 1.25281310e+03, 4.69984663e+02, 0.00000000e+00],
+        [0.00000000e+00, 0.00000000e+00, 1.00000000e+00, 0.00000000e+00],
+        [0.00000000e+00, 0.00000000e+00, 0.00000000e+00, 1.00000000e+00]
+    ])
+    
+    # Initialize depth model
+    model = DepthAnythingV2(
+        encoder='vitb',
+        features=128,
+        out_channels=[96, 192, 384, 768]
+    ).to('cuda')
     model.load_state_dict(torch.load(model_path))
     model.eval()
-
-    # "location2D": [[1164.0, 627.0]], "location3D": [[1.964, 0.786, 8.525]]
+    
+    # Load image and estimate depth
     raw_img = cv2.imread(image_path)
-    depth = model.infer_image(raw_img) # HxW raw depth map
-    print(depth[627, 1164])
-
-    # 指定像素点
-    pixel = (1164, 627)  # 行索引为 240，列索引为 320
-
-    # 转换为 3D 坐标
-    X, Y, Z = pixel_to_3d(depth, camera_intrinsic, pixel)
-
-    print(f"3D 坐标相机坐标系X = {X:.3f} m, Y = {Y:.3f} m, Z = {Z:.3f} m")
+    depth_map = model.infer_image(raw_img)
+    
+    # Test conversion for a specific pixel
+    pixel = (1164, 627)
+    X, Y, Z = pixel_to_3d_coordinates(depth_map, camera_intrinsic, pixel)
+    
+    print(f"3D coordinates in camera frame: X = {X:.3f} m, Y = {Y:.3f} m, Z = {Z:.3f} m")

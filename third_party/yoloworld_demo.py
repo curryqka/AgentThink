@@ -1,120 +1,160 @@
-from ultralytics import YOLOWorld
+# Copyright (c) Kangan Qian. All rights reserved.
+# Authors: Kangan Qian (Tsinghua University, Xiaomi Corporation)
+# Description: Open-vocabulary object detection using YOLO-World
+
 from ultralytics import YOLO
-# from third_party.yoloworld_demo import 
+from typing import List, Tuple, Union
+import os
 
-def get_2dbox_open_vocabulary_detector(text=['car'], image_path=None):
-    model_path = '/high_perf_store/mlinfra-vepfs/qiankangan/Drive-MLLM-main/third_party/ckpt/yolov8x-worldv2.pt'
 
+def get_2dbox_open_vocabulary_detector(
+        text: Union[str, List[str]] = ['car'], 
+        image_path: str = None,
+        model_path: str = "./pretrained_models/yolov8x-worldv2.pt"
+    ) -> Tuple[str, Union[None, List]]:
+    """
+    Detect objects in an image using open-vocabulary detection and return 2D bounding boxes
+    
+    Args:
+        text (str|list): Object names to detect (single string or list of strings)
+        image_path (str): Path to input image file
+        model_path (str): Path to YOLO-World model checkpoint
+        
+    Returns:
+        Tuple containing:
+        - prompt (str): Description of detection results
+        - box_2d (list|None): List of detected bounding boxes or None if none found
+    """
+    # Ensure text is a list
     if not isinstance(text, list):
         text = [text]
-    # Initialize a YOLO-World model
-    model = YOLO(model_path)  # or choose yolov8m/l-world.pt
-
-    # Define custom classes
+    
+    # Initialize YOLO-World model
+    model = YOLO(model_path)
+    
+    # Set classes to detect
     model.set_classes(text)
-
-    # Execute prediction for specified categories on an image
+    
+    # Execute prediction
     results = model.predict(image_path)
-
+    
+    # Extract detection results
     box_cls = results[0].boxes.cls
-    xywh = results[0].boxes.xywh
     xyxy = results[0].boxes.xyxy
-
     box_2d = xyxy.cpu().tolist()
-
-    if not box_2d:
-        prompt_None = ""
-        for id in results[0].names.keys():
-            prompt_None += f"\nThe 2d box for {text[id]} in this image fails to get, you must infer or identify them yourself."
-        return prompt_None, None
     
-
+    # Handle case where no objects are detected
+    if not box_2d:
+        prompt = ""
+        for obj_name in text:
+            prompt += f"\nFailed to detect 2D bounding box for {obj_name}. You must infer or identify it yourself."
+        return prompt, None
+    
+    # Build prompt with detection results
     prompt = ""
-    for id in results[0].names.keys():
-        if id not in box_cls.cpu().tolist():
-            prompt += f"\nThe 2d box for {text[id]} in this image fails to get, you must infer or identify them yourself."
+    for obj_name in text:
+        if obj_name not in model.names.values():
+            prompt += f"\nFailed to detect 2D bounding box for {obj_name}. You must infer or identify it yourself."
             continue
-        cur_word_box_id = box_cls.cpu().tolist().index(id)
-        prompt += f"\nThe 2d box for {text[id]} in this image is {box_2d[cur_word_box_id]}."
-    return prompt, box_2d[0]
+        
+        # Find the class ID for this object name
+        class_id = [k for k, v in model.names.items() if v == obj_name][0]
+        
+        if class_id not in box_cls.cpu().tolist():
+            prompt += f"\nFailed to detect 2D bounding box for {obj_name}. You must infer or identify it yourself."
+            continue
+        
+        # Get the bounding box for this object
+        box_index = box_cls.cpu().tolist().index(class_id)
+        prompt += f"\nDetected 2D bounding box for {obj_name}: {box_2d[box_index]}."
+    
+    return prompt, box_2d[0] if box_2d else None
 
-def get_2dloc_open_vocabulary_detector(text=['car'], image_path=None):
-    model_path = '/high_perf_store/mlinfra-vepfs/qiankangan/Drive-MLLM-main/third_party/ckpt/yolov8x-worldv2.pt'
-    # Initialize a YOLO-World model
-    model = YOLO(model_path)  # or choose yolov8m/l-world.pt
 
+def get_2dloc_open_vocabulary_detector(
+        text: Union[str, List[str]] = ['car'], 
+        image_path: str = None,
+        model_path: str = "./pretrained_models/yolov8x-worldv2.pt"
+    ) -> Tuple[str, Union[None, List]]:
+    """
+    Detect objects in an image using open-vocabulary detection and return 2D locations
+    
+    Args:
+        text (str|list): Object names to detect (single string or list of strings)
+        image_path (str): Path to input image file
+        model_path (str): Path to YOLO-World model checkpoint
+        
+    Returns:
+        Tuple containing:
+        - prompt (str): Description of detection results
+        - pixel_location (list|None): List of detected pixel locations or None if none found
+    """
+    # Ensure text is a list
     if not isinstance(text, list):
         text = [text]
-        
-    # Define custom classes
+    
+    # Initialize YOLO-World model
+    model = YOLO(model_path)
+    
+    # Set classes to detect
     model.set_classes(text)
-
-    # Execute prediction for specified categories on an image
+    
+    # Execute prediction
     results = model.predict(image_path)
-
+    
+    # Extract detection results
     box_cls = results[0].boxes.cls
     xywh = results[0].boxes.xywh
-    xyxy = results[0].boxes.xyxy
-
-    # gt: "location2D": [[1164.0, 627.0]], "location3D": [[1.964, 0.786, 8.525]]
-    # center_x, center_y = (xyxy[:, 0] + xyxy[:, 2]) / 2, (xyxy[:, 1] + xyxy[:, 3]) / 2
-   
     pixel_location = xywh.cpu().numpy()[:, 0:2].tolist()
-
-    if not pixel_location:
-        prompt_None = ""
-        for id in results[0].names.keys():
-            prompt_None += f"\nThe 2d location for {text[id]} in this image fails to get, you must infer or identify them yourself."
-        return prompt_None, None
-
-    prompt = ""
-    for id in results[0].names.keys():
-        if id not in box_cls.cpu().tolist():
-            prompt += f"\nThe 2d location for {text[id]} in this image fails to get, you must infer or identify them yourself."
-            continue
-        cur_word_box_id = box_cls.cpu().tolist().index(id)
-        
-        prompt += f"\nThe 2d location for {text[id]} in this image is {pixel_location[cur_word_box_id]}."
     
-    return prompt, pixel_location[0]
+    # Handle case where no objects are detected
+    if not pixel_location:
+        prompt = ""
+        for obj_name in text:
+            prompt += f"\nFailed to detect 2D location for {obj_name}. You must infer or identify it yourself."
+        return prompt, None
+    
+    # Build prompt with detection results
+    prompt = ""
+    for obj_name in text:
+        if obj_name not in model.names.values():
+            prompt += f"\nFailed to detect 2D location for {obj_name}. You must infer or identify it yourself."
+            continue
+        
+        # Find the class ID for this object name
+        class_id = [k for k, v in model.names.items() if v == obj_name][0]
+        
+        if class_id not in box_cls.cpu().tolist():
+            prompt += f"\nFailed to detect 2D location for {obj_name}. You must infer or identify it yourself."
+            continue
+        
+        # Get the location for this object
+        loc_index = box_cls.cpu().tolist().index(class_id)
+        prompt += f"\nDetected 2D location for {obj_name}: {pixel_location[loc_index]}."
+    
+    return prompt, pixel_location[0] if pixel_location else None
+
 
 if __name__ == '__main__':
-    mode = 'diy'
-    model_path = '/high_perf_store/mlinfra-vepfs/qiankangan/Drive-MLLM-main/third_party/ckpt/yolov8x-worldv2.pt'
-    # image_path = '/high_perf_store/bev_lane/third_party_datasets/nuscenes/samples/CAM_FRONT/n008-2018-05-21-11-06-59-0400__CAM_FRONT__1526915250362465.jpg'
-    image_path = '/high_perf_store/mlinfra-vepfs/llm_data/drive_datasets/MLLM_eval_dataset/validation/image/nuscenes_CAM_FRONT_5976.webp'
-
-    # 
-    # text = ['Where is the silver car located in the image?']
-    text = ["black motorcycle", 'silver car']
-    # text = ["How far apart are black motorcycle and silver car?"]
-    if mode == "raw":
-        # 加载模型
-        model = YOLOWorld(model_path)
-        
-        # 推理预测
-        results = model.predict(data_path)
-
-        
+    # Example usage
+    image_path = "./third_party/nuscenes_CAM_FRONT_5976.webp"
+    model_path = ".//yolov8x-worldv2.pt"
+    objects_to_detect = ["black motorcycle", 'silver car']
     
-    else:
-        # Initialize a YOLO-World model
-        model = YOLO(model_path)  # or choose yolov8m/l-world.pt
+    # Detect bounding boxes
+    box_prompt, detected_box = get_2dbox_open_vocabulary_detector(
+        text=objects_to_detect,
+        image_path=image_path,
+        model_path=model_path
+    )
+    print("Bounding Box Detection Results:")
+    print(box_prompt)
     
-        # Define custom classes
-        model.set_classes(text)
-    
-        # Execute prediction for specified categories on an image
-        results = model.predict(image_path)
-
-        xywh = results[0].boxes.xywh
-        xyxy = results[0].boxes.xyxy
-
-        # gt: "location2D": [[1164.0, 627.0]], "location3D": [[1.964, 0.786, 8.525]]
-        # center_x, center_y = (xyxy[0, 0] + xyxy[0, 2]) / 2, (xyxy[0, 1] + xyxy[0, 3]) / 2
-        breakpoint()
-        # 显示结果
-        results[0].show()
-        breakpoint()
-        # Show results
-        results[0].show()
+    # Detect locations
+    loc_prompt, detected_location = get_2dloc_open_vocabulary_detector(
+        text=objects_to_detect,
+        image_path=image_path,
+        model_path=model_path
+    )
+    print("\nLocation Detection Results:")
+    print(loc_prompt)
