@@ -1,0 +1,1 @@
+pip install ultralytics openai-clip

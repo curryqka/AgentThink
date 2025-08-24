@@ -1,0 +1,8 @@
+timm
+deepspeed
+openai-clip
+ultralytics
+torch==2.6.0
+torchvision==0.21.0
+torchaudio==2.6.0
+transformers==4.50.1

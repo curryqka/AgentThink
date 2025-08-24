@@ -1,0 +1,246 @@
+[
+{
+    "idx": "e7ef871f77f44331aefdebc24ec034b7_b10f0cd792b64d16a1a5e8349b20504c_1",
+    "image": [
+        "samples/CAM_FRONT_LEFT/n015-2018-08-02-17-16-37+0800__CAM_FRONT_LEFT__1533201471404844.jpg",
+        "samples/CAM_FRONT/n015-2018-08-02-17-16-37+0800__CAM_FRONT__1533201471412477.jpg",
+        "samples/CAM_FRONT_RIGHT/n015-2018-08-02-17-16-37+0800__CAM_FRONT_RIGHT__1533201471420339.jpg",
+        "samples/CAM_BACK_RIGHT/n015-2018-08-02-17-16-37+0800__CAM_BACK_RIGHT__1533201471427893.jpg",
+        "samples/CAM_BACK/n015-2018-08-02-17-16-37+0800__CAM_BACK__1533201471437636.jpg",
+        "samples/CAM_BACK_LEFT/n015-2018-08-02-17-16-37+0800__CAM_BACK_LEFT__1533201471447423.jpg"
+    ],
+    "question": "Describe the 3 most important objects in the current scene that the ego vehicle must take into consideration.",
+    "final_answer": "The three most important objects the ego vehicle must consider are the car directly ahead, the barrier indicating restricted access, and the pedestrian standing on the side of the road. These objects are crucial for safety and navigation.",
+    "steps": "\n\n1. In the top middle image, the ego vehicle is right behind another vehicle. This car is directly in its path and needs to be considered for speed and distance management.\n2. The top middle image also shows a barrier ahead. This indicates restricted access which the ego vehicle must consider before proceeding.\n3. The top right image includes a person standing near the road. The ego vehicle should be cautious of pedestrians and maintain a safe distance.",
+    "lidar": "n015-2018-08-02-17-16-37+0800__LIDAR_TOP__1533201471447336.pcd.bin",
+    "cot_data": {
+        "Question": "Describe the 3 most important objects in the current scene that the ego vehicle must take into consideration.",
+        "Chain": [
+            {
+                "Tool": {
+                    "function_name": "get_leading_object_detection",
+                    "parameters": [
+                        ""
+                    ]
+                },
+                "Sub": "What is the leading object detected directly in front of the ego vehicle?",
+                "Guess_Answer": "A car is detected directly ahead of the ego vehicle.",
+                "key_words": [
+                    "leading object",
+                    "car ahead",
+                    "front vehicle",
+                    "directly in path",
+                    "preceding car"
+                ],
+                "Missing_flag": "False",
+                "next_action": "continue reasoning"
+            },
+            {
+                "Tool": {
+                    "function_name": "get_surrounding_object_detections",
+                    "parameters": [
+                        ""
+                    ]
+                },
+                "Sub": "What surrounding objects are detected near the ego vehicle that could pose a restriction or obstacle?",
+                "Guess_Answer": "A barrier is detected ahead indicating restricted access.",
+                "key_words": [
+                    "barrier",
+                    "obstacle",
+                    "restriction",
+                    "roadblock",
+                    "access limitation"
+                ],
+                "Missing_flag": "False",
+                "next_action": "continue reasoning"
+            },
+            {
+                "Tool": {
+                    "function_name": "get_surrounding_object_detections",
+                    "parameters": [
+                        ""
+                    ]
+                },
+                "Sub": "Are there any pedestrians near the road that the ego vehicle must be cautious of?",
+                "Guess_Answer": "A pedestrian is detected standing near the road.",
+                "key_words": [
+                    "pedestrian",
+                    "person",
+                    "roadside walker",
+                    "foot traffic",
+                    "bystander"
+                ],
+                "Missing_flag": "False",
+                "next_action": "conclude"
+            }
+        ],
+        "final_answer_keywords": [
+            "car ahead",
+            "barrier",
+            "pedestrian",
+            "ego vehicle consideration",
+            "critical objects"
+        ],
+        "final_answer": "The three most important objects the ego vehicle must consider are the car directly ahead, the barrier indicating restricted access, and the pedestrian standing on the side of the road. These objects are crucial for safety and navigation."
+    },
+    "tool_result": [
+        {
+            "name": "get_leading_object_detection",
+            "args": {},
+            "prompt": "Leading object detections:\nLeading object detected, object type: car, object id: 4, position: (-0.06, 6.58), size: (1.82, 4.37)\n"
+        },
+        {
+            "name": "get_surrounding_object_detections",
+            "args": {},
+            "prompt": "Surrounding object detections:\nSurrounding object detected, object type: car, object id: 0, position: (-16.95, -8.55), size: (1.93, 4.50)\nSurrounding object detected, object type: car, object id: 2, position: (-17.31, -11.72), size: (1.97, 4.67)\nSurrounding object detected, object type: car, object id: 4, position: (-0.06, 6.58), size: (1.82, 4.37)\nSurrounding object detected, object type: car, object id: 5, position: (-7.22, -8.74), size: (1.87, 4.52)\nSurrounding object detected, object type: car, object id: 6, position: (-1.74, -5.43), size: (1.87, 4.61)\nSurrounding object detected, object type: car, object id: 7, position: (5.29, -12.03), size: (1.85, 4.43)\nSurrounding object detected, object type: pedestrian, object id: 9, position: (8.89, 15.36), size: (0.78, 0.88)\nSurrounding object detected, object type: car, object id: 17, position: (0.11, 14.82), size: (1.90, 4.61)\n"
+        },
+        {
+            "name": "get_surrounding_object_detections",
+            "args": {},
+            "prompt": "Surrounding object detections:\nSurrounding object detected, object type: car, object id: 0, position: (-16.95, -8.55), size: (1.93, 4.50)\nSurrounding object detected, object type: car, object id: 2, position: (-17.31, -11.72), size: (1.97, 4.67)\nSurrounding object detected, object type: car, object id: 4, position: (-0.06, 6.58), size: (1.82, 4.37)\nSurrounding object detected, object type: car, object id: 5, position: (-7.22, -8.74), size: (1.87, 4.52)\nSurrounding object detected, object type: car, object id: 6, position: (-1.74, -5.43), size: (1.87, 4.61)\nSurrounding object detected, object type: car, object id: 7, position: (5.29, -12.03), size: (1.85, 4.43)\nSurrounding object detected, object type: pedestrian, object id: 9, position: (8.89, 15.36), size: (0.78, 0.88)\nSurrounding object detected, object type: car, object id: 17, position: (0.11, 14.82), size: (1.90, 4.61)\n"
+        }
+    ],
+    "system_prompts": "\n    **A Language Agent for Autonomous Driving**\n    Role: You are the brain of an autonomous vehicle (a.k.a. ego-vehicle).\n    \n*****Ego States:*****\nCurrent State:\n - Velocity (vx,vy): (0.00,0.00)\n - Heading Angular Velocity (v_yaw): (0.00)\n - Acceleration (ax,ay): (-0.00,0.02)\n - Can Bus: (-0.02,-0.40)\n - Heading Speed: (0.00)\n - Steering: (-0.07)\nHistorical Trajectory (last 2 seconds): [(0.00,0.07), (0.00,0.05), (0.00,0.03), (0.00,0.00)]\nMission Goal: FORWARD\n\n"
+    },
+    {
+        "idx": "e7ef871f77f44331aefdebc24ec034b7_b10f0cd792b64d16a1a5e8349b20504c_4",
+        "image": [
+            "samples/CAM_FRONT_LEFT/n015-2018-08-02-17-16-37+0800__CAM_FRONT_LEFT__1533201471404844.jpg",
+            "samples/CAM_FRONT/n015-2018-08-02-17-16-37+0800__CAM_FRONT__1533201471412477.jpg",
+            "samples/CAM_FRONT_RIGHT/n015-2018-08-02-17-16-37+0800__CAM_FRONT_RIGHT__1533201471420339.jpg",
+            "samples/CAM_BACK_RIGHT/n015-2018-08-02-17-16-37+0800__CAM_BACK_RIGHT__1533201471427893.jpg",
+            "samples/CAM_BACK/n015-2018-08-02-17-16-37+0800__CAM_BACK__1533201471437636.jpg",
+            "samples/CAM_BACK_LEFT/n015-2018-08-02-17-16-37+0800__CAM_BACK_LEFT__1533201471447423.jpg"
+        ],
+        "question": "What is the safest action for the ego vehicle to take in any given situation? Choose from the following answers only\n                    A) Slow down and assess the situation.\n                    B) Speed up to maintain momentum.\n                    C) Steer abruptly to avoid any obstacle.\n                    D) Maintain the current speed without making adjustments.",
+        "final_answer": "A) Slow down and assess the situation.",
+        "steps": "\n1. **Front View Observations**: The first image in the top row shows a parking area with a car and visible traffic control devices such as barriers. The second image shows a vehicle waiting at a barrier, indicating potential congestion or a stopping point ahead.\n2. **Back View Observations**: The bottom row images depict narrow roads with parked vehicles and possible oncoming traffic, suggesting a need for cautious navigation.",
+        "lidar": "n015-2018-08-02-17-16-37+0800__LIDAR_TOP__1533201471447336.pcd.bin",
+        "cot_data": {
+            "Question": "What is the safest action for the ego vehicle to take in any given situation? Choose from the following answers only A) Slow down and assess the situation. B) Speed up to maintain momentum. C) Steer abruptly to avoid any obstacle. D) Maintain the current speed without making adjustments.",
+            "Chain": [
+                {
+                    "Tool": {
+                        "function_name": "get_surrounding_object_detections",
+                        "parameters": [
+                            ""
+                        ]
+                    },
+                    "Sub": "What are the surrounding objects detected near the ego vehicle that could influence its safe maneuvering?",
+                    "Guess_Answer": "There are multiple surrounding objects such as parked vehicles, barriers, and possible oncoming vehicles within a 20m range.",
+                    "key_words": [
+                        "surrounding objects",
+                        "nearby obstacles",
+                        "adjacent vehicles",
+                        "proximal barriers"
+                    ],
+                    "Missing_flag": "False",
+                    "next_action": "continue reasoning"
+                },
+                {
+                    "Tool": {
+                        "function_name": "get_leading_object_detection",
+                        "parameters": [
+                            ""
+                        ]
+                    },
+                    "Sub": "Is there a leading object ahead that the ego vehicle should consider before deciding on an action?",
+                    "Guess_Answer": "A vehicle is detected waiting at a barrier ahead, indicating a potential stopping or congestion point.",
+                    "key_words": [
+                        "leading object",
+                        "front vehicle",
+                        "vehicle ahead",
+                        "obstruction in path"
+                    ],
+                    "Missing_flag": "False",
+                    "next_action": "continue reasoning"
+                },
+                {
+                    "Tool": {
+                        "function_name": "get_current_lane_divider",
+                        "parameters": [
+                            ""
+                        ]
+                    },
+                    "Sub": "What is the current lane environment like including lane dividers or boundaries to support safe driving decisions?",
+                    "Guess_Answer": "The lane boundaries suggest narrow roads with limited space, requiring cautious navigation.",
+                    "key_words": [
+                        "lane boundaries",
+                        "lane dividers",
+                        "road edges",
+                        "lane markers"
+                    ],
+                    "Missing_flag": "False",
+                    "next_action": "continue reasoning"
+                },
+                {
+                    "Tool": {
+                        "function_name": "get_current_shoulder",
+                        "parameters": [
+                            ""
+                        ]
+                    },
+                    "Sub": "How much space is available on the road shoulders on both sides of the ego vehicle that affects maneuverability?",
+                    "Guess_Answer": "Road shoulders are narrow or not sufficient for safe evasive steering, limiting abrupt maneuvers.",
+                    "key_words": [
+                        "road shoulders",
+                        "side space",
+                        "shoulder width",
+                        "side clearance"
+                    ],
+                    "Missing_flag": "False",
+                    "next_action": "continue reasoning"
+                },
+                {
+                    "Tool": {
+                        "function_name": "",
+                        "parameters": [
+                            ""
+                        ]
+                    },
+                    "Sub": "Considering object detections, lane constraints, and shoulder space, which action ensures the safest driving behavior?",
+                    "Guess_Answer": "Slowing down and assessing the situation allows the vehicle to respond safely to nearby obstacles and road conditions.",
+                    "key_words": [
+                        "slowing down",
+                        "safe assessment",
+                        "cautious navigation",
+                        "risk mitigation"
+                    ],
+                    "Missing_flag": "False",
+                    "next_action": "conclude"
+                }
+            ],
+            "final_answer_keywords": [
+                "slow down",
+                "assess situation",
+                "safe driving",
+                "caution"
+            ],
+            "final_answer": "A) Slow down and assess the situation."
+        },
+        "tool_result": [
+            {
+                "name": "get_surrounding_object_detections",
+                "args": {},
+                "prompt": "Surrounding object detections:\nSurrounding object detected, object type: car, object id: 0, position: (-16.95, -8.55), size: (1.93, 4.50)\nSurrounding object detected, object type: car, object id: 2, position: (-17.31, -11.72), size: (1.97, 4.67)\nSurrounding object detected, object type: car, object id: 4, position: (-0.06, 6.58), size: (1.82, 4.37)\nSurrounding object detected, object type: car, object id: 5, position: (-7.22, -8.74), size: (1.87, 4.52)\nSurrounding object detected, object type: car, object id: 6, position: (-1.74, -5.43), size: (1.87, 4.61)\nSurrounding object detected, object type: car, object id: 7, position: (5.29, -12.03), size: (1.85, 4.43)\nSurrounding object detected, object type: pedestrian, object id: 9, position: (8.89, 15.36), size: (0.78, 0.88)\nSurrounding object detected, object type: car, object id: 17, position: (0.11, 14.82), size: (1.90, 4.61)\n"
+            },
+            {
+                "name": "get_leading_object_detection",
+                "args": {},
+                "prompt": "Leading object detections:\nLeading object detected, object type: car, object id: 4, position: (-0.06, 6.58), size: (1.82, 4.37)\n"
+            },
+            {
+                "name": "get_current_lane_divider",
+                "args": {},
+                "prompt": "Get distance to both sides of road lane_dividers of current ego-vehicle location:\nCurrent ego-vehicle's distance to left lane_divider is uncertain and distance to right lane_divider is 1.0m\n"
+            },
+            {
+                "name": "get_current_shoulder",
+                "args": {},
+                "prompt": "Distance to both sides of road shoulders of current ego-vehicle location:\nCurrent ego-vehicle's distance to left shoulder is 2.0m and right shoulder is 0.5m\n"
+            },
+            null
+        ],
+        "system_prompts": "\n    **A Language Agent for Autonomous Driving**\n    Role: You are the brain of an autonomous vehicle (a.k.a. ego-vehicle).\n    \n*****Ego States:*****\nCurrent State:\n - Velocity (vx,vy): (0.00,0.00)\n - Heading Angular Velocity (v_yaw): (0.00)\n - Acceleration (ax,ay): (-0.00,0.02)\n - Can Bus: (-0.02,-0.40)\n - Heading Speed: (0.00)\n - Steering: (-0.07)\nHistorical Trajectory (last 2 seconds): [(0.00,0.07), (0.00,0.05), (0.00,0.03), (0.00,0.00)]\nMission Goal: FORWARD\n\n"
+    }
+]

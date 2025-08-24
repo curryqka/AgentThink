@@ -1,0 +1,63 @@
+[   
+    {
+    "image": [
+        "/high_perf_store/mlinfra-vepfs/qiankangan/Drive-MLLM-main/data/MLLM_eval_dataset/validation/image/nuscenes_CAM_FRONT_3896.webp"
+    ],
+    "question": "Question: Is white car in front of black motorcycle?",
+    "final_answer": "Yes",
+    "tool_result": [
+        {
+            "name": "get_3d_loc_in_cam_info",
+            "args": {"object_names":["black motorcycle"], "image_path":"/high_perf_store/mlinfra-vepfs/qiankangan/Drive-MLLM-main/data/MLLM_eval_dataset/validation/image/nuscenes_CAM_FRONT_3896.webp"},
+            "prompt": "\n"
+        },
+        {
+            "name": "get_3d_loc_in_cam_info",
+            "args": {"object_names":["white car"], "image_path":"/high_perf_store/mlinfra-vepfs/qiankangan/Drive-MLLM-main/data/MLLM_eval_dataset/validation/image/nuscenes_CAM_FRONT_3896.webp"},
+            "prompt": "\n"
+        }
+    ],
+    "system_prompts": "\n **A Language Agent for Autonomous Driving**\n    Role: You are the brain of an autonomous vehicle (a.k.a. ego-vehicle).\n Task Description: In this task, you are required to determine whether one object is positioned in front of another based on their z-values. The z-value indicates the depth position of an object, where a smaller z-value means the object is closer to the front. If the coordinates of the objects are not be provided directly, you must infer or identify them yourself.  \n"
+    },
+    {
+        "image": [
+            "/high_perf_store/mlinfra-vepfs/qiankangan/Drive-MLLM-main/data/MLLM_eval_dataset/validation/image/nuscenes_CAM_FRONT_3590.webp"
+        ],
+        "question": "Question: Which is further left, white car or white bus?",
+        "final_answer": "Yes",
+        "tool_result": [
+            {
+                "name": "get_open_world_vocabulary_detection_info",
+                "args": {"object_names":["white car"], "image_path":"/high_perf_store/mlinfra-vepfs/qiankangan/Drive-MLLM-main/data/MLLM_eval_dataset/validation/image/nuscenes_CAM_FRONT_3590.webp"},
+                "prompt": "\n"
+            },
+            {
+                "name": "get_open_world_vocabulary_detection_info",
+                "args": {"object_names":["white bus"], "image_path":"/high_perf_store/mlinfra-vepfs/qiankangan/Drive-MLLM-main/data/MLLM_eval_dataset/validation/image/nuscenes_CAM_FRONT_3590.webp"},
+                "prompt": "\n"
+            }
+        ],
+        "system_prompts": "\n **A Language Agent for Autonomous Driving**\n    Role: You are the brain of an autonomous vehicle (a.k.a. ego-vehicle).\n Task Description: In this task, you are tasked with determining which of two specific objects is positioned further to the left based on their x-coordinates. Note that the smaller the x-coordinate, the closer the object is to the left. If the coordinates of the objects are not be provided directly; you must infer or identify them yourself.  \n"
+        },
+    
+    {
+        "image": [
+            "/high_perf_store/mlinfra-vepfs/qiankangan/Drive-MLLM-main/data/MLLM_eval_dataset/validation/image/nuscenes_CAM_FRONT_3757.webp"
+        ],
+        "question": "Question: Is pedestrian wearing black clothes in front of red and white bus?",
+        "final_answer": "Yes",
+        "tool_result": [
+            {
+                "name": "get_3d_loc_in_cam_info",
+                "args": {"object_names":["pedestrian with black clothes"], "image_path":"/high_perf_store/mlinfra-vepfs/qiankangan/Drive-MLLM-main/data/MLLM_eval_dataset/validation/image/nuscenes_CAM_FRONT_3757.webp"},
+                "prompt": "\n"
+            },
+            {
+                "name": "get_3d_loc_in_cam_info",
+                "args": {"object_names":["white and red bus"], "image_path":"/high_perf_store/mlinfra-vepfs/qiankangan/Drive-MLLM-main/data/MLLM_eval_dataset/validation/image/nuscenes_CAM_FRONT_3757.webp"},
+                "prompt": "\n"
+            }
+        ],
+        "system_prompts": "\n **A Language Agent for Autonomous Driving**\n    Role: You are the brain of an autonomous vehicle (a.k.a. ego-vehicle).\n Task Description: In this task, you are required to determine whether one object is positioned in front of another based on their z-values. The z-value indicates the depth position of an object, where a smaller z-value means the object is closer to the front. If the coordinates of the objects are not be provided directly, you must infer or identify them yourself.  \n"
+        }
+]
