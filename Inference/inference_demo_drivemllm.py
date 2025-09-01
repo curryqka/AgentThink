@@ -247,7 +247,7 @@ def main():
         full_prompt = f"{system_prompt}\n{question}\nTool results:{tool_prompt}"
         
         # Run model inference
-        model_output = run_chat_model_inference(image_path, full_prompt, model_path="pretrain_models/AgentThink")
+        model_output = run_chat_model_inference(image_path, full_prompt, model_path="pretrained_model/AgentThink")
         print("Model output:", model_output)
 
 

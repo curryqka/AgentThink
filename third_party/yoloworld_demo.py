@@ -10,7 +10,7 @@ import os
 def get_2dbox_open_vocabulary_detector(
         text: Union[str, List[str]] = ['car'], 
         image_path: str = None,
-        model_path: str = "./pretrained_models/yolov8x-worldv2.pt"
+        model_path: str = "./pretrained_model/yolov8x-worldv2.pt"
     ) -> Tuple[str, Union[None, List]]:
     """
     Detect objects in an image using open-vocabulary detection and return 2D bounding boxes
@@ -66,7 +66,11 @@ def get_2dbox_open_vocabulary_detector(
         
         # Get the bounding box for this object
         box_index = box_cls.cpu().tolist().index(class_id)
-        prompt += f"\nDetected 2D bounding box for {obj_name}: {box_2d[box_index]}."
+        prompt += f"""\nDetected 2D bounding box for {obj_name}: {box_2d[box_index]}. """
+
+    prompt += """For instance, Detected 2D bounding box for person: [100, 30, 120, 50]. 
+        (The bounding box is formatted as [x_min, y_min, x_max, y_max] in coordinates in 2D images. 
+        Larger x values indicate a position closer to the right edge of the image, and larger y values indicate a position closer to the bottom edge of the image.) """
     
     return prompt, box_2d[0] if box_2d else None
 
@@ -74,7 +78,7 @@ def get_2dbox_open_vocabulary_detector(
 def get_2dloc_open_vocabulary_detector(
         text: Union[str, List[str]] = ['car'], 
         image_path: str = None,
-        model_path: str = "./pretrained_models/yolov8x-worldv2.pt"
+        model_path: str = "./pretrained_model/yolov8x-worldv2.pt"
     ) -> Tuple[str, Union[None, List]]:
     """
     Detect objects in an image using open-vocabulary detection and return 2D locations

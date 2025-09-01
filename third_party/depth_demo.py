@@ -86,7 +86,7 @@ def get_3d_location(
         text: list = ['car'], 
         image_path: str = None, 
         debug: bool = False,
-        model_path: str = "./pretrained_models/depth_anything_v2_vitb.pth",
+        model_path: str = "./pretrained_model/depth_anything_v2_vitb.pth",
         encoder_type: str = "vitb",
         camera_intrinsic: np.ndarray = None
     ) -> tuple:
@@ -167,15 +167,16 @@ def get_3d_location(
         X, Y, Z = pixel_to_3d_coordinates(depth_map, camera_intrinsic, pixel)
         spatial_location.append([X, Y, Z])
         
-        prompt += f"\nEstimated 3D location for {obj} in camera coordinates: [{X:.2f}, {Y:.2f}, {Z:.2f}]"
+        prompt += f"\nEstimated 3D location(x,y,z) for {obj} in camera coordinates: [{X:.2f}, {Y:.2f}, {Z:.2f}], z={Z:.2f}"
     
+    prompt += f"""(Note: The Z coordinate represents depth, with smaller Z-values indicating closer proximity to the camera/front.)"""
     return prompt, spatial_location
 
 
 if __name__ == '__main__':
     # Example usage
     image_path = "./third_party/nuscenes_CAM_FRONT_5978.webp"
-    model_path = "./pretrained_models/depth_anything_v2_vitb.pth"
+    model_path = "./pretrained_model/depth_anything_v2_vitb.pth"
     
     # Camera intrinsic matrix
     camera_intrinsic = np.array([

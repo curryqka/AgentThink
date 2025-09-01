@@ -1,6 +1,6 @@
 # AgentThink: A Unified Framework for Tool-Augmented Chain-of-Thought Reasoning in Vision-Language Models for Autonomous Driving
 
-
+E-mails: qka23@mails.tsinghua.edu.cn
 
 During the development of AgentThink, we drew inspiration from ancient wisdom. As stated by Xunzi:
 > 📜 "A gentleman is not inherently different from others; he excels by skillfully leveraging external tools."
@@ -40,8 +40,6 @@ Watch this video to see AgentThink's environmental perception in complex traffic
   <img src="assets/demo.gif" alt="Demo GIF" width="640"/>
 </p>
 
-
-> **Tip**: Click the image to play. For alternative viewing options, visit our [Bilibili](#) channel.
 
 ### Visualization Gallery
 <!-- 横向对比图 -->
@@ -102,90 +100,15 @@ Complementing the video, these visualizations demonstrate key capabilities:
 | Section               | Description                            | Link                                  |
 |----------------------|----------------------------------------|---------------------------------------|
 | Environment Setup     | Install dependencies and setup         | [Environment Setup](#environment-setup) |
-| Training Launch       | Run SFT/RLFT with Swift                | [Training Launch](#training-launch)     |
+| Model Inference        | Real-time inference on val set        | [Model Inference](#model-inference)       |
 | Demo Inference        | Real-time inference on test set        | [Demo Inference](#demo-inference)       |
-| Evaluation & Metrics  | Scoring pipeline using LLM-as-Judge    | [Evaluation & Metrics](#evaluation--metrics) |
+| Evaluation-Metrics  | Scoring pipeline using LLM-as-Judge    | [Evaluation Metrics](#evaluation-metrics) |
 | Benchmark Results     | Quantitative performance comparisons   | [Benchmark Results](#benchmark-results) |
 
 ---
 
-## 🛠️ Environment Setup
-
-Install dependencies and prepare your environment:
-
-```bash
-# Create virtual environment
-conda create -n agentthink python=3.10
-conda activate agentthink
-
-# Install dependencies
-pip install -r requirements.txt
-
-# Install ms-swift
-bash scripts/env.sh
-
-# Install drivemllm dependency
-bash scripts/env_drivemllm.sh
-```
-
----
-
-## 🏋️ Training Launch
-
-Set your model path, dataset path and output folder for single-GPU debug:
-
-```bash
-python train/sft_debug.py \
-  --model "/path/to/your/model" \
-  --dataset "/path/to/your/dataset" \
-  --output_dir "/path/to/output/directory"
-```
-
-For full training with multi-GPU (≥8 GPUs):
-
-```bash
-# Stage 1: Supervised Fine-Tuning (SFT)
-bash train/script/sft_drivelmm_8gpu.sh
-
-# Stage 2: Reinforcement Learning Fine-Tuning (RLFT)
-bash train/script/rlft_drivelmm_8gpu.sh
-```
-
----
-
-## 🎬 Demo Inference
-
-Use your trained checkpoint to run inference on test samples:
-
-```bash
-# Inference script
-bash scripts/inference_swift.sh [your_CKPT_PATH] [your_OUTPUT_DIR]
-```
-
----
-
-## 📊 Evaluation & Metrics
-
-Use LLM-as-Judge to calculate performance metrics:
-
-```bash
-# Step 1: Evaluate reasoning ability and MCQ accuracy
-python evaluation/evaluation_reasoning_script.py
-
-# Step 2: Evaluate tool use correctness
-python evaluation/evaluation_tool_script.py
-```
-
----
-
-## 🏆 Benchmark Results
-
-See the [Results](#) section or poster for AgentThink’s SOTA performance.
-
-
-
-## ⚙️ Getting Started
-### Basic
+## Environment Setup
+### 🛠️ Basic
 | component | version | command |
 |------|------|----------|
 | os | Ubuntu 20.04 | `cat /etc/issue` |
@@ -194,7 +117,9 @@ See the [Results](#) section or poster for AgentThink’s SOTA performance.
 | GPU Driver | 535.129.03  | `nvidia-smi` | grep "Driver Version"` |
 | Pytorch| 2.6.0 | `print(torch.__version__)` |
 
-### Environment Setup
+### Basic Setup
+Install dependencies and prepare your environment:
+
 ```bash
 # Create virtual environment
 conda create -n agentthink python=3.10
@@ -216,9 +141,47 @@ cd third_party
 git clone https://github.com/modelscope/ms-swift.git
 ```
 
+---
+
+## Model Inference
+🎬 Use your trained checkpoint [AgentThink](xxxxxx) to run inference on val samples [AgentThink-CoT-val](xxxxxx):
+
+```bash
+# Inference script
+bash scripts/inference_scripts/inference.sh [your_CKPT_PATH] [your_OUTPUT_DIR]
+
+# Inference with tool script
+bash scripts/inference_scripts/inference_withtool.sh [your_CKPT_PATH] [your_OUTPUT_DIR]
+
+# Inference using multi-node GPUs
+bash scripts/inference_scripts/inference_multigpu.sh [your_CKPT_PATH] [your_OUTPUT_DIR]
+
+# Inference AgentThink
+bash scripts/inference_agentthink.sh [your_CKPT_PATH] [your_OUTPUT_DIR]
+```
+
+---
+
+## Evaluation Metrics
+📊Use LLM-as-Judge to calculate performance metrics:
+
+```bash
+# Evaluate reasoning ability and MCQ accuracy
+python evaluation/evaluation_script.py
+
+```
+
+---
+
+## Benchmark Results
+
+🏆See the [Results](#agentthink-results) section or poster for AgentThink’s SOTA performance.
+
+
+
 ## 🚀 Quick Start
 ### Download the model
-Our AgentThink[AgentThink](xx) model based on the Qwen2.5-VL-7B.
+Our [AgentThink](xx) model based on the Qwen2.5-VL-7B.
 
 ### Download the tool model
 Clone the depth anythingv2[DAM]: (https://github.com/DepthAnything/Depth-Anything-V2)
@@ -231,6 +194,10 @@ Clone the YoloWorld[YoloWorld]: (https://github.com/AILab-CVC/YOLO-World)
 git clone https://github.com/AILab-CVC/YOLO-World
 ```
 Then download the pretrain models in the [YoloWorld](https://docs.ultralytics.com/zh/models/yolo-world/) and [DepthAnything](https://huggingface.co/depth-anything/Depth-Anything-V2-Base)
+
+### Download the basic tool results
+Download the val.pkl file in the https://github.com/USC-GVL/Agent-Driver
+
 
 ### Demo Inference
 ```bash
@@ -247,16 +214,16 @@ python Inference/inference_demo_drivelmm.py
 | Status | Task Description                   | 
 |-------|------------------------------------|
 | ✅    | AgentThink demo implementation     | 
-| 🔜    | General reasoning evaluation metrics | 
+| ✅    | General reasoning evaluation metrics | 
 | 🔜    | Tool-specific evaluation metrics   | 
 | 🔜    | Data preprocessing pipeline        | 
 | ✅    | Debug example implementation       | 
 | 🔜    | Multi-stage training framework     | 
 | 🔜    | Tool function interaction environment | 
 
-## 📊 Benchmark Results
+## AgentThink Results
 
-### DriveLMM-o1 Performance
+### 📊 DriveLMM-o1 Performance
 | Vision Language Models | Risk Assess. (%)↑ | Rule Adh. (%)↑ | Scene Aware. (%)↑ | Relevance (%)↑ | Missing (%)↑ | Reason. (%)↑ | MCQ (%)↑ |
 |------------------------|-------------------|----------------|--------------------|-----------------|--------------|--------------|----------|
 | [GPT-4o](https://github.com/example/GPT-4o) [16] | 71.32             | 80.72          | 72.96              | 76.65           | 71.43        | 72.52        | 57.84    |
@@ -269,7 +236,7 @@ python Inference/inference_demo_drivelmm.py
 | [DriveLMM-o1](https://github.com/example/DriveLMM-o1) [15] | 73.01           | 81.56          | 75.39              | 79.42           | 74.49        | 75.24        | 62.36    |
 | **AgentThink (Ours)** | **80.51**         | **84.98**      | **82.11**          | **84.99**       | **79.56**    | **79.68**    | **71.35** |
 
-### DriveMLLM Comparison
+### 📊 DriveMLLM Comparison
 
 | Type       | Model                                                                 | L/R    | F/B    | RHD   | RD     | PPos  | BBox  | CVD   | CD     | AccS  | Overall |
 |------------|-----------------------------------------------------------------------|--------|--------|-------|--------|-------|-------|-------|--------|-------|---------|
@@ -291,12 +258,43 @@ python Inference/inference_demo_drivelmm.py
 ## 📁 Repository Structure
 ```
 AgentThink/
-├── tools/               # Tool library implementations
-├── AgentThink/          # Core framework
-├── benchmarks/          # Evaluation benchmarks
-├── docs/                # Documentation resources
-└── assets/              # Visual assets
+├── assets/                 # Visual assets and resources
+├── data/                   # Data files and datasets
+├── evaluation/             # Evaluation scripts and benchmarks
+│   ├── evaluation_script.py
+│   └── inference_agentthink.py
+├── Inference/              # Inference-related scripts and data
+│   ├── inference_demo_data_drivemllm.json
+│   ├── inference_demo_data_drivelmm.json
+│   └── inference_demo_drivemllm.py
+├── results/                # Output and result files
+│   └── agentthink/
+├── scripts/                # Various utility scripts
+│   ├── debug_scripts/
+│   ├── inference_scripts/
+│   └── tools/              # Tool library implementations
+├── third_party/            # Third-party libraries and resources
+│   ├── 🐍 inference.py         # Main inference script
+│   ├── 🐍 prepare_data.py      # Data preparation script
+│   ├── 🐍 utlis.py             # Utility functions
+│   ├── 🐚 env.sh               # Environment setup script
+│   ├── 🐚 env_drivemllm.sh     # DriveMLLM environment script
+│   └── 🐚 prepare_json_data.sh # Long JSON data preparation script
+├── 📄 README.md            # Project documentation
+├── 📄 README_CN.md         # 中文文档
+├── 📄 requirements.txt     # Python dependencies
+
 ```
+
+## 🔗 Related Works
+
+| Name | Description | Link |
+|------|-------------|------|
+| Depth-Anything-V2 | High-quality monocular depth estimation | [GitHub](https://github.com/DepthAnything/Depth-Anything-V2) |
+| YOLO-World | Open-vocabulary object detection | [GitHub](https://github.com/AILab-CVC/YOLO-World) |
+| all-MiniLM | Extract language semantic similarity |[HuggingFace](https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2)|
+| AgentDriver | Offer the tool results | [Github](https://github.com/USC-GVL/Agent-Driver) |
+
 
 ## 🪪 License & Citation
 

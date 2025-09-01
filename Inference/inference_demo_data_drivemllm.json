@@ -1,19 +1,19 @@
 [   
     {
     "image": [
-        "/high_perf_store/mlinfra-vepfs/qiankangan/Drive-MLLM-main/data/MLLM_eval_dataset/validation/image/nuscenes_CAM_FRONT_3896.webp"
+        "demo_image/nuscenes_CAM_FRONT_3896.webp"
     ],
-    "question": "Question: Is white car in front of black motorcycle?",
+    "question": "Question: Is white car in front of black motorcycle according to the camera coordination?",
     "final_answer": "Yes",
     "tool_result": [
         {
             "name": "get_3d_loc_in_cam_info",
-            "args": {"object_names":["black motorcycle"], "image_path":"/high_perf_store/mlinfra-vepfs/qiankangan/Drive-MLLM-main/data/MLLM_eval_dataset/validation/image/nuscenes_CAM_FRONT_3896.webp"},
+            "args": {"object_names":["black motorcycle"], "image_path":"demo_image/nuscenes_CAM_FRONT_3896.webp"},
             "prompt": "\n"
         },
         {
             "name": "get_3d_loc_in_cam_info",
-            "args": {"object_names":["white car"], "image_path":"/high_perf_store/mlinfra-vepfs/qiankangan/Drive-MLLM-main/data/MLLM_eval_dataset/validation/image/nuscenes_CAM_FRONT_3896.webp"},
+            "args": {"object_names":["white car"], "image_path":"demo_image/nuscenes_CAM_FRONT_3896.webp"},
             "prompt": "\n"
         }
     ],
@@ -21,19 +21,19 @@
     },
     {
         "image": [
-            "/high_perf_store/mlinfra-vepfs/qiankangan/Drive-MLLM-main/data/MLLM_eval_dataset/validation/image/nuscenes_CAM_FRONT_3590.webp"
+            "demo_image/nuscenes_CAM_FRONT_3590.webp"
         ],
-        "question": "Question: Which is further left, white car or white bus?",
+        "question": "Question: Which is further left in this 2D image, white car or white bus?",
         "final_answer": "Yes",
         "tool_result": [
             {
                 "name": "get_open_world_vocabulary_detection_info",
-                "args": {"object_names":["white car"], "image_path":"/high_perf_store/mlinfra-vepfs/qiankangan/Drive-MLLM-main/data/MLLM_eval_dataset/validation/image/nuscenes_CAM_FRONT_3590.webp"},
+                "args": {"object_names":["white car"], "image_path":"demo_image/nuscenes_CAM_FRONT_3590.webp"},
                 "prompt": "\n"
             },
             {
                 "name": "get_open_world_vocabulary_detection_info",
-                "args": {"object_names":["white bus"], "image_path":"/high_perf_store/mlinfra-vepfs/qiankangan/Drive-MLLM-main/data/MLLM_eval_dataset/validation/image/nuscenes_CAM_FRONT_3590.webp"},
+                "args": {"object_names":["white bus"], "image_path":"demo_image/nuscenes_CAM_FRONT_3590.webp"},
                 "prompt": "\n"
             }
         ],
@@ -42,19 +42,19 @@
     
     {
         "image": [
-            "/high_perf_store/mlinfra-vepfs/qiankangan/Drive-MLLM-main/data/MLLM_eval_dataset/validation/image/nuscenes_CAM_FRONT_3757.webp"
+            "demo_image/nuscenes_CAM_FRONT_3757.webp"
         ],
-        "question": "Question: Is pedestrian wearing black clothes in front of red and white bus?",
+        "question": "Question: Is pedestrian wearing black clothes in front of red and white bus(closer proximity to the camera/front)?",
         "final_answer": "Yes",
         "tool_result": [
             {
                 "name": "get_3d_loc_in_cam_info",
-                "args": {"object_names":["pedestrian with black clothes"], "image_path":"/high_perf_store/mlinfra-vepfs/qiankangan/Drive-MLLM-main/data/MLLM_eval_dataset/validation/image/nuscenes_CAM_FRONT_3757.webp"},
+                "args": {"object_names":["pedestrian with black clothes"], "image_path":"demo_image/nuscenes_CAM_FRONT_3757.webp"},
                 "prompt": "\n"
             },
             {
                 "name": "get_3d_loc_in_cam_info",
-                "args": {"object_names":["white and red bus"], "image_path":"/high_perf_store/mlinfra-vepfs/qiankangan/Drive-MLLM-main/data/MLLM_eval_dataset/validation/image/nuscenes_CAM_FRONT_3757.webp"},
+                "args": {"object_names":["white and red bus"], "image_path":"demo_image/nuscenes_CAM_FRONT_3757.webp"},
                 "prompt": "\n"
             }
         ],

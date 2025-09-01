@@ -228,6 +228,9 @@ def main():
     tool_data_path = "./data/tool_results"
     image_base_path = "./data/image2concat"
     model_path = "./pretrained_model"
+
+    AgentThink_model = os.path.join(model_path, 'AgentThink')
+    # AgentThink_model = os.path.join(model_path, 'checkpoint-700-merged')
     
     # Load JSON data
     with open(json_file, "r", encoding="utf-8") as file:
@@ -236,7 +239,8 @@ def main():
     # Process each sample in the JSON data
     for sample in json_data:
         sample_idx = sample['idx']
-        scene_token, frame_token = sample_idx.split('_', 1)
+        scene_token, frame_token, question_id = sample_idx.split('_', 2)
+        # breakpoint()
         
         # Initialize agent for tool execution
         agent = AgentThink(
@@ -275,7 +279,8 @@ def main():
         full_prompt = f"{system_prompt}\n{question}\nTool results:{tool_prompt}"
         
         # Run model inference
-        model_output = run_model_inference(image_path, full_prompt, model_path)
+
+        model_output = run_model_inference(image_path, full_prompt, AgentThink_model)
         print(f"Sample {sample_idx} output: {model_output}")
 
 
