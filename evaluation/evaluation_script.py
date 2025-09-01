@@ -13,12 +13,12 @@ client = OpenAI(api_key=openai_api_key)
 
 # Define input and output file paths
 # input_file = "results/DriveLMMo1_internvl.json"  
-input_file = "results/DriveLMMo1_250422011413.json"
+input_file = "results/DriveLMMo1_250422011413.json" # put your result json here
 output_file = "DriveLMMo1-results_result.json"  
 csv_output_file = "DriveLMMo1-results_result.csv"
 
 # dataset = "./ReasoningDriveLM_TEST.json"
-dataset = "/high_perf_store/mlinfra-vepfs/qiankangan/Drive-MLLM-main/data/DriveLMMo1/DriveLMMo1_TEST.json"
+dataset = "./data/DriveLMMo1/DriveLMMo1_TEST.json"
 
 # System prompt for evaluation
 system_prompt = """
