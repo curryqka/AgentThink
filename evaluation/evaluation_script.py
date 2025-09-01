@@ -18,7 +18,8 @@ output_file = "DriveLMMo1-results_result.json"
 csv_output_file = "DriveLMMo1-results_result.csv"
 
 # dataset = "./ReasoningDriveLM_TEST.json"
-dataset = "./data/DriveLMMo1/DriveLMMo1_TEST.json"
+dataset = "./data/DriveLMMo1/DriveLMMo1_TEST.json" # put the DriveLMMo1 test gt file here
+
 
 # System prompt for evaluation
 system_prompt = """
