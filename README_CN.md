@@ -223,6 +223,38 @@ git clone https://github.com/AILab-CVC/YOLO-World
 
 参考 [AgentDriver](https://github.com/USC-GVL/Agent-Driver) 获取 val.pkl 工具结果。
 
+### 文件数据模型结构
+```
+AgentThink/
+├── 📂 data/                    # 数据集和处理后的数据
+    ├── DriveLMMo1_TEST_tool_results.jsonl
+    ├── DriveLMMo1_TEST.jsonl
+│   ├── 📂 image2concat/        # 拼接后的图像文件
+│   └── 📂 tool_results/        # 工具处理结果
+
+│
+├── 📂 demo_image/              # 演示图像
+│   ├── nuscenes_CAM_FRONT_3590.webp
+│   ├── nuscenes_CAM_FRONT_3757.webp
+│   └── nuscenes_CAM_FRONT_3896.webp
+│
+├── 📂 pretrained_model/        # 预训练模型文件
+│   ├── 📂 AgentThink/
+│   │   └── checkpoint-700-merged
+│   ├── depth_anything_v2_vitb.pth
+│   └── yolov8x-world2.pt
+│
+├── 📂 assets/                  # 视觉资源和素材
+├── 📂 evaluation/              # 评估脚本和基准测试
+├── 📂 Inference/               # 推理相关脚本和数据
+├── 📂 results/                 # 输出和结果文件
+├── 📂 scripts/                 # 各种工具脚本
+├── 📂 third_party/             # 第三方库和资源
+├── README.cn.md                # 中文文档
+├── README.md                   # 项目文档
+├── requirements.txt            # Python依赖项
+└── ...                         # 其他项目文件
+```
 ### Demo推理
 
 ```bash
