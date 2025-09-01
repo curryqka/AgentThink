@@ -27,7 +27,7 @@ from swift.llm import (
 )
 from swift.tuners import Swift
 
-from scripts.tools.generater_pipeline import generate_func_prompt
+from scripts.tools.agentthink_data_generater_pipeline import generate_func_prompt
 from scripts.tools.tool_libraries_simple import FuncAgent
 func_agent = FuncAgent()
 
