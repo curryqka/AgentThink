@@ -2,7 +2,7 @@ import os
 import json
 
 # Define input and output file paths
-input_file = "/high_perf_store/mlinfra-vepfs/qiankangan/DriveLMM-o1-main/data/tool_results/cot_val_Qwen2.5-VL.json"  # Change this to your actual path
+input_file = "./data/tool_results/cot_val_Qwen2.5-VL.json"  # Change this to your actual path
 output_file = "./data/DriveLMMo1_TEST_tool_results.jsonl"  # Change this to your actual path
 
 # Read the combined JSON file
