@@ -198,6 +198,37 @@ Then download the pretrain models in the [YoloWorld](https://docs.ultralytics.co
 ### Download the basic tool results
 Download the val.pkl file in the https://github.com/USC-GVL/Agent-Driver
 
+Folder structure:
+```
+AgentThink/
+├── 📂 data/                    # Dataset and processed data
+    ├── DriveLMMo1_TEST_tool_results.jsonl
+    ├── DriveLMMo1_TEST.jsonl
+│   ├── 📂 image2concat/        # Concatenated image files
+│   └── 📂 tool_results/        # Results from tool processing
+│
+├── 📂 demo_image/              # Demonstration images
+│   ├── nuscenes_CAM_FRONT_3590.webp
+│   ├── nuscenes_CAM_FRONT_3757.webp
+│   └── nuscenes_CAM_FRONT_3896.webp
+│
+├── 📂 pretrained_model/        # Pre-trained model files
+│   ├── 📂 AgentThink/
+│   │   └── checkpoint-700-merged
+│   ├── depth_anything_v2_vitb.pth
+│   └── yolov8x-world2.pt
+│
+├── 📂 assets/                  # Visual assets and resources
+├── 📂 evaluation/              # Evaluation scripts and benchmarks
+├── 📂 Inference/               # Inference-related scripts and data
+├── 📂 results/                 # Output and result files
+├── 📂 scripts/                 # Various utility scripts
+├── 📂 third_party/             # Third-party libraries and resources
+├── README.cn.md                # Chinese documentation
+├── README.md                   # Project documentation
+├── requirements.txt            # Python dependencies
+└── ...                         # Other project files
+```
 
 ### Demo Inference
 ```bash
