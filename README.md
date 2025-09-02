@@ -89,7 +89,7 @@ Complementing the video, these visualizations demonstrate key capabilities:
 </div>
 
 ## 📰 Project Updates
-- 🎉 [2025.08.20] Our paper was accepted as EMNLP2025 Fundings
+- 🎉 [2025.08.20] Our paper was accepted as EMNLP2025 Findings
 - 🚀 [2025.07.02] v1.1 released with demo and sample data
 - 📄 [2025.05.22] Paper published on arXiv
 - 🎥 Web Demo and Swift full training pipeline coming soon
