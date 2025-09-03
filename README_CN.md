@@ -1,6 +1,6 @@
 # AgentThink：用于自动驾驶的工具增强视觉语言推理框架
 
-联系邮箱：qka23@mails.tsinghua.edu.cn
+联系邮箱：qka23@mails.tsinghua.edu.cn or sicong.jiang@mail.mcgill.ca or luoziang0122@163.com or zhongyangtony@163.com
 > **Authors:**
 >
 > Kangan Qian\*, Sicong Jiang\*, Yang Zhong\*, Ziang Luo\*, Zilin Huang, Tianze Zhu, Kun Jiang†, Mengmeng Yang, Zheng Fu, Jinyu Miao, Yining Shi, He Zhe Lim, Li Liu, Tianbao Zhou, Huang Yu, Yifei Hu, Guang Li, Guang Chen, Hao Ye†, Lijun Sun, Diange Yang†
@@ -8,9 +8,9 @@
 > **Affiliations:**
 >
 > 1 清华大学  
-> 2 麦吉尔大学
-> 3 小米科技公司
-> 4 威斯康辛麦迪逊
+> 2 麦吉尔大学  
+> 3 小米科技公司  
+> 4 威斯康辛麦迪逊  
 >
 > \* Equal contribution, † Corresponding author
 
