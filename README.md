@@ -1,6 +1,6 @@
 # AgentThink: A Unified Framework for Tool-Augmented Chain-of-Thought Reasoning in Vision-Language Models for Autonomous Driving
 
-E-mails: qka23@mails.tsinghua.edu.cn
+E-mails：qka23@mails.tsinghua.edu.cn or sicong.jiang@mail.mcgill.ca or luoziang0122@163.com or zhongyangtony@163.com
 
 > **Authors:**
 >
