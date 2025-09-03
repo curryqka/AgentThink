@@ -31,6 +31,9 @@
   <a href="https://arxiv.org/pdf/2505.15298">📄 论文链接</a> •
   <a href="https://github.com/curryqka/AgentThink">🔖 最新版本 v1.0</a> •
   <a href="https://www.apache.org/licenses/LICENSE-2.0">🪪 开源协议</a>
+
+  <a href="https://drive.google.com/drive/folders/1RsgJlo3K7xRCUqphWvWECgyOcCvOa9Hx?usp=drive_link">🪚 模型</a> |
+  <a href="https://drive.google.com/drive/folders/1RsgJlo3K7xRCUqphWvWECgyOcCvOa9Hx?usp=drive_link">🔢 数据</a>
 </p>
 
 </div>
