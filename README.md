@@ -2,6 +2,20 @@
 
 E-mails: qka23@mails.tsinghua.edu.cn
 
+> **Authors:**
+>
+> Kangan Qian\*, Sicong Jiang\*, Yang Zhong\*, Ziang Luo\*, Zilin Huang, Tianze Zhu, Kun Jiang†, Mengmeng Yang, Zheng Fu, Jinyu Miao, Yining Shi, He Zhe Lim, Li Liu, Tianbao Zhou, Huang Yu, Yifei Hu, Guang Li, Guang Chen, Hao Ye†, Lijun Sun, Diange Yang†
+>
+> **Affiliations:**
+>
+> 1 Tsinghua University  
+> 2 McGill University  
+> 3 Xiaomi Corporation  
+> 4 University of Wisconsin – Madison
+>
+> \* Equal contribution, † Corresponding author
+
+
 During the development of AgentThink, we drew inspiration from ancient wisdom. As stated by Xunzi:
 > 📜 "A gentleman is not inherently different from others; he excels by skillfully leveraging external tools."
 >
@@ -14,10 +28,10 @@ During the development of AgentThink, we drew inspiration from ancient wisdom. A
 <img src="assets/AgentThink.png" alt="AgentThink Logo" width="360"/>
 
 <p>
-  <a href="https://agentthink.github.io">🌐 Project Homepage</a> •
-  <a href="https://arxiv.org/pdf/2505.15298">📄 Paper Link</a> •
-  <a href="https://github.com/agentthink/agentthink/releases/tag/v1.1">🔖 Latest Version v1.1</a> •
-  <a href="LICENSE">🪪 License</a>
+  <a href="https://curryqka.github.io/AgentThink.github.io/">🌐 Project</a> •
+  <a href="https://arxiv.org/pdf/2505.15298">📄 Paper</a> •
+  <a href="https://github.com/curryqka/AgentThink">🔖 Repo</a> •
+  <a href="https://www.apache.org/licenses/LICENSE-2.0">🪪 License</a>
 </p>
 
 </div>
@@ -59,7 +73,7 @@ Complementing the video, these visualizations demonstrate key capabilities:
 | Scenario | Description | Image |
 | --- | --- | --- |
 | High-level planning | Visualizes high-level planning | [View](assets/planning.png) |
-| Spatial Understanding | Demonstrates spatial relationship analysis | [View](assets/demo_path_planning.png) |
+| Spatial Understanding | Demonstrates spatial relationship analysis | [View](assets/zero-visual.png) |
 | Environment Adaptability | Shows performance in adverse weather or low-light| [View](assets/planning-night.png) |
 
 
@@ -89,7 +103,7 @@ Complementing the video, these visualizations demonstrate key capabilities:
 </div>
 
 ## 📰 Project Updates
-- 🎉 [2025.08.20] Our paper was accepted as EMNLP2025 Findings
+- 🎉 [2025.08.20] Our paper was accepted as EMNLP2025 Fundings
 - 🚀 [2025.07.02] v1.1 released with demo and sample data
 - 📄 [2025.05.22] Paper published on arXiv
 - 🎥 Web Demo and Swift full training pipeline coming soon
@@ -100,6 +114,7 @@ Complementing the video, these visualizations demonstrate key capabilities:
 | Section               | Description                            | Link                                  |
 |----------------------|----------------------------------------|---------------------------------------|
 | Environment Setup     | Install dependencies and setup         | [Environment Setup](#environment-setup) |
+| AgentThink data generation | generate the agentthink data      | [Data Generation](#data-generation)       |
 | Model Inference        | Real-time inference on val set        | [Model Inference](#model-inference)       |
 | Demo Inference        | Real-time inference on test set        | [Demo Inference](#demo-inference)       |
 | Evaluation-Metrics  | Scoring pipeline using LLM-as-Judge    | [Evaluation Metrics](#evaluation-metrics) |
@@ -142,6 +157,25 @@ git clone https://github.com/modelscope/ms-swift.git
 ```
 
 ---
+
+## Data Generation
+Use GPT-4o-mini to generate Tool-CoT data after filling the OpenAI `api_key` and `base_url`.
+```bash
+# based on the DriveLMM-o1 TRAIN.json
+python scripts/tools/agentthink_data_generater_pipeline.py --split train --model_name gpt-4o-mini
+
+```
+
+Generate combined 6-views images.
+```bash
+# based on the nuScenes dataset
+python data_image_converter.py \
+    --json_file_path /path/to/your/DriveLMMo1_TRAIN/TEST.json \
+    --image_root_dir /path/to/your/nuscene/root/directory \
+    --savepath_img /path/to/your/output/directory
+```
+---
+
 
 ## Model Inference
 🎬 Use your trained checkpoint [AgentThink](xxxxxx) to run inference on val samples [AgentThink-CoT-val](xxxxxx):
@@ -257,33 +291,33 @@ python Inference/inference_demo_drivelmm.py
 ### 📊 DriveLMM-o1 Performance
 | Vision Language Models | Risk Assess. (%)↑ | Rule Adh. (%)↑ | Scene Aware. (%)↑ | Relevance (%)↑ | Missing (%)↑ | Reason. (%)↑ | MCQ (%)↑ |
 |------------------------|-------------------|----------------|--------------------|-----------------|--------------|--------------|----------|
-| [GPT-4o](https://github.com/example/GPT-4o) [16] | 71.32             | 80.72          | 72.96              | 76.65           | 71.43        | 72.52        | 57.84    |
-| [Ovis1.5-Gemma2-9B](https://github.com/example/Ovis1.5-Gemma2-9B) [21] | 51.34            | 66.36          | 54.74              | 55.72           | 55.74        | 55.62        | 48.85    |
-| [Mulberry-7B](https://github.com/example/Mulberry-7B) [45] | 51.89            | 63.66          | 56.68              | 57.27           | 57.45        | 57.65        | 52.86    |
-| [LLaVA-CoT](https://github.com/example/LLaVA-CoT) [43] | 57.62            | 69.01          | 60.84              | 62.72           | 60.67        | 61.41        | 49.27    |
-| [LlamaV-o1](https://github.com/example/LlamaV-o1) [34] | 60.20            | 73.52          | 62.67              | 64.66           | 63.41        | 63.13        | 50.02    |
-| [InternVL2.5-8B](https://github.com/example/InternVL2.5-8B) [4] | 69.02           | 78.43          | 71.52              | 75.80           | 70.54        | 71.62        | 54.87    |
-| [Qwen2.5-VL-7B](https://github.com/example/Qwen2.5-VL-7B) [1] | 46.44           | 60.45          | 51.02              | 50.15           | 52.19        | 51.77        | 37.81    |
-| [DriveLMM-o1](https://github.com/example/DriveLMM-o1) [15] | 73.01           | 81.56          | 75.39              | 79.42           | 74.49        | 75.24        | 62.36    |
+| [GPT-4o](https://github.com/gpt4o-image/GPT-4o) | 71.32             | 80.72          | 72.96              | 76.65           | 71.43        | 72.52        | 57.84    |
+| [Ovis1.5-Gemma2-9B](https://huggingface.co/AIDC-AI/Ovis1.5-Gemma2-9B) | 51.34            | 66.36          | 54.74              | 55.72           | 55.74        | 55.62        | 48.85    |
+| [Mulberry-7B](https://github.com/HJYao00/Mulberry) | 51.89            | 63.66          | 56.68              | 57.27           | 57.45        | 57.65        | 52.86    |
+| [LLaVA-CoT](https://github.com/PKU-YuanGroup/LLaVA-CoT) | 57.62            | 69.01          | 60.84              | 62.72           | 60.67        | 61.41        | 49.27    |
+| [LlamaV-o1](https://github.com/mbzuai-oryx/LlamaV-o1) | 60.20            | 73.52          | 62.67              | 64.66           | 63.41        | 63.13        | 50.02    |
+| [InternVL2.5-8B](https://huggingface.co/OpenGVLab/InternVL2_5-8B) | 69.02           | 78.43          | 71.52              | 75.80           | 70.54        | 71.62        | 54.87    |
+| [Qwen2.5-VL-7B](https://github.com/QwenLM/Qwen2.5-VL) | 46.44           | 60.45          | 51.02              | 50.15           | 52.19        | 51.77        | 37.81    |
+| [DriveLMM-o1](https://github.com/ayesha-ishaq/DriveLMM-o1) | 73.01           | 81.56          | 75.39              | 79.42           | 74.49        | 75.24        | 62.36    |
 | **AgentThink (Ours)** | **80.51**         | **84.98**      | **82.11**          | **84.99**       | **79.56**    | **79.68**    | **71.35** |
 
 ### 📊 DriveMLLM Comparison
 
 | Type       | Model                                                                 | L/R    | F/B    | RHD   | RD     | PPos  | BBox  | CVD   | CD     | AccS  | Overall |
 |------------|-----------------------------------------------------------------------|--------|--------|-------|--------|-------|-------|-------|--------|-------|---------|
-| Zero-shot  | [GPT-4o](https://github.com/example/GPT-4o) [16]                     | 91.72  | 67.60  | 9.58  | 14.69  | 40.90 | 4.07  | 46.11 | 70.65  | 43.16 | 25.63   |
-|            | [GPT-4o-mini](https://github.com/example/GPT-4o-mini)                | 67.67  | 50.13  | 70.44 | 0.00   | 29.28 | 3.78  | 0.00  | 46.40  | 33.46 | 16.68   |
-|            | [LLaVA-ov-72B](https://github.com/example/LLaVA-ov-72B) [19]          | 85.42  | 49.48  | 13.76 | 45.27  | 16.46 | 0.00  | 42.97 | 27.09  | 35.06 | 21.10   |
-|            | [Qwen2.5-VL-7B](https://github.com/example/Qwen2.5-VL-7B) [1]         | 76.55  | 55.24  | 7.14  | 17.11  | 55.97 | 38.31 | 55.94 | 51.52  | 44.72 | 13.36   |
-|            | [Qwen + CoT](https://github.com/example/Qwen-CoT)                    | 87.06  | 63.09  | 16.69 | 22.56  | 52.51 | 38.87 | 76.90 | 38.71  | 49.55 | 19.31   |
-|            | [Qwen + DirectTool](https://github.com/example/Qwen-DirectTool)       | 78.95  | 48.96  | 58.43 | 67.57  | 58.20 | 42.22 | 51.76 | 51.38  | 57.18 | 24.05   |
+| Zero-shot  | [GPT-4o](https://github.com/gpt4o-image/GPT-4o)                | 91.72  | 67.60  | 9.58  | 14.69  | 40.90 | 4.07  | 46.11 | 70.65  | 43.16 | 25.63   |
+|            | [GPT-4o-mini](https://openai.com/zh-Hans-CN/index/gpt-4o-mini-advancing-cost-efficient-intelligence/)                | 67.67  | 50.13  | 70.44 | 0.00   | 29.28 | 3.78  | 0.00  | 46.40  | 33.46 | 16.68   |
+|            | [LLaVA-ov-72B](https://huggingface.co/llava-hf/llava-onevision-qwen2-72b-ov-hf)          | 85.42  | 49.48  | 13.76 | 45.27  | 16.46 | 0.00  | 42.97 | 27.09  | 35.06 | 21.10   |
+|            | [Qwen2.5-VL-7B](https://github.com/QwenLM/Qwen2.5-VL)        | 76.55  | 55.24  | 7.14  | 17.11  | 55.97 | 38.31 | 55.94 | 51.52  | 44.72 | 13.36   |
+|            | [Qwen + CoT](https://github.com/QwenLM/Qwen2.5-VL)                      | 87.06  | 63.09  | 16.69 | 22.56  | 52.51 | 38.87 | 76.90 | 38.71  | 49.55 | 19.31   |
+|            | [Qwen + DirectTool](https://github.com/QwenLM/Qwen2.5-VL)         | 78.95  | 48.96  | 58.43 | 67.57  | 58.20 | 42.22 | 51.76 | 51.38  | 57.18 | 24.05   |
 |            | **AgentThink (Ours)**                                                 | 82.33  | 54.40  | 56.14 | 61.45  | 70.45 | 56.23 | 23.09 | 51.60  | 56.96 | 26.52   |
-| One-shot   | [GPT-4o](https://github.com/example/GPT-4o)                           | 91.08  | 69.37  | 36.51 | 71.17  | 42.44 | 5.10  | 0.00  | 63.88  | 47.44 | 33.17   |
-|            | [GPT-4o-mini](https://github.com/example/GPT-4o-mini)                 | 66.00  | 48.95  | 83.02 | 58.47  | 25.71 | 3.97  | 52.73 | 55.23  | 49.26 | 22.13   |
-|            | [LLaVA-ov-72B](https://github.com/example/LLaVA-ov-72B) [19]           | 79.12  | 62.97  | 49.26 | 68.04  | 28.57 | 2.20  | 53.12 | 60.90  | 50.52 | 36.66   |
-|            | [Qwen2.5-VL-7B](https://github.com/example/Qwen2.5-VL-7B) [1]         | 80.30  | 53.14  | 36.96 | 39.13  | 62.69 | 22.63 | 49.88 | 48.32  | 49.13 | 33.53   |
-|            | [Qwen + CoT](https://github.com/example/Qwen-CoT)                    | 86.35  | 59.95  | 43.29 | 31.81  | 53.64 | 26.93 | 51.02 | 42.30  | 49.41 | 32.06   |
-|            | [Qwen + DirectTool](https://github.com/example/Qwen-DirectTool)       | 84.57  | 55.50  | 67.32 | 59.54  | 85.58 | 26.07 | 52.34 | 53.25  | 60.52 | 42.27   |
+| One-shot   | [GPT-4o](https://github.com/gpt4o-image/GPT-4o)                       | 91.08  | 69.37  | 36.51 | 71.17  | 42.44 | 5.10  | 0.00  | 63.88  | 47.44 | 33.17   |
+|            | [GPT-4o-mini](https://openai.com/zh-Hans-CN/index/gpt-4o-mini-advancing-cost-efficient-intelligence/)                 | 66.00  | 48.95  | 83.02 | 58.47  | 25.71 | 3.97  | 52.73 | 55.23  | 49.26 | 22.13   |
+|            | [LLaVA-ov-72B](https://huggingface.co/llava-hf/llava-onevision-qwen2-72b-ov-hf)          | 79.12  | 62.97  | 49.26 | 68.04  | 28.57 | 2.20  | 53.12 | 60.90  | 50.52 | 36.66   |
+|            | [Qwen2.5-VL-7B](https://github.com/QwenLM/Qwen2.5-VL)        | 80.30  | 53.14  | 36.96 | 39.13  | 62.69 | 22.63 | 49.88 | 48.32  | 49.13 | 33.53   |
+|            | [Qwen + CoT](https://github.com/QwenLM/Qwen2.5-VL)                      | 86.35  | 59.95  | 43.29 | 31.81  | 53.64 | 26.93 | 51.02 | 42.30  | 49.41 | 32.06   |
+|            | [Qwen + DirectTool](https://github.com/QwenLM/Qwen2.5-VL)         | 84.57  | 55.50  | 67.32 | 59.54  | 85.58 | 26.07 | 52.34 | 53.25  | 60.52 | 42.27   |
 |            | **AgentThink (Ours)**                                                 | 78.71  | 48.46  | 60.64 | 60.71  | 72.36 | 64.46 | 52.26 | 52.04  | 61.21 | 47.24   |
 
 ## 📁 Repository Structure
