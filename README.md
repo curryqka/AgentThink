@@ -9,7 +9,9 @@ E-mails：qka23@mails.tsinghua.edu.cn or sicong.jiang@mail.mcgill.ca or luoziang
 <img src="assets/AgentThink.png" alt="AgentThink Logo" width="360"/>
 
 During the development of AgentThink, we drew inspiration from ancient wisdom. As stated by Xunzi:
-> 📜 "A gentleman is not inherently different from others; he excels by skillfully leveraging external tools."
+> 📜 "君子生非异也，善假于物也。"
+> 
+> "A gentleman is not inherently different from others; he excels by skillfully leveraging external tools."
 >
 > This philosophy aligns perfectly with our design principles - by integrating multiple tools and models, AgentThink achieves superior understanding and response capabilities in complex autonomous driving scenarios.
 ---
