@@ -2,8 +2,6 @@
   <h1><b> [EMNLP'25] 🚗 AgentThink: A Unified Framework for Tool-Augmented Chain-of-Thought Reasoning in Vision-Language Models for Autonomous Driving</b></h1>
     </div>
     
-
-E-mails：qka23@mails.tsinghua.edu.cn or sicong.jiang@mail.mcgill.ca or luoziang0122@163.com or zhongyangtony@163.com
 <div align="center">
 
 <img src="assets/AgentThink.png" alt="AgentThink Logo" width="360"/>
@@ -26,6 +24,8 @@ During the development of AgentThink, we drew inspiration from ancient wisdom. A
 
   <a href="https://drive.google.com/drive/folders/1RsgJlo3K7xRCUqphWvWECgyOcCvOa9Hx?usp=drive_link">🪚 Model</a> |
   <a href="https://drive.google.com/drive/folders/1RsgJlo3K7xRCUqphWvWECgyOcCvOa9Hx?usp=drive_link">🔢 Data</a>
+  
+  E-mails: qka23@mails.tsinghua.edu.cn or sicong.jiang@mail.mcgill.ca or luoziang0122@163.com or zhongyangtony@163.com
 </p>
 
 </div>
