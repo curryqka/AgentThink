@@ -4,20 +4,9 @@
     
 
 E-mails：qka23@mails.tsinghua.edu.cn or sicong.jiang@mail.mcgill.ca or luoziang0122@163.com or zhongyangtony@163.com
+<div align="center">
 
-> **Authors:**
->
-> Kangan Qian\*, Sicong Jiang\*, Yang Zhong\*, Ziang Luo\*, Zilin Huang, Tianze Zhu, Kun Jiang†, Mengmeng Yang, Zheng Fu, Jinyu Miao, Yining Shi, He Zhe Lim, Li Liu, Tianbao Zhou, Huang Yu, Yifei Hu, Guang Li, Guang Chen, Hao Ye†, Lijun Sun, Diange Yang†
->
-> **Affiliations:**
->
-> 1 Tsinghua University  
-> 2 McGill University  
-> 3 Xiaomi Corporation  
-> 4 University of Wisconsin – Madison
->
-> \* Equal contribution, † Corresponding author
-
+<img src="assets/AgentThink.png" alt="AgentThink Logo" width="360"/>
 
 During the development of AgentThink, we drew inspiration from ancient wisdom. As stated by Xunzi:
 > 📜 "A gentleman is not inherently different from others; he excels by skillfully leveraging external tools."
@@ -26,9 +15,6 @@ During the development of AgentThink, we drew inspiration from ancient wisdom. A
 ---
 [中文](README_CN.md) ｜ **English**
 
-<div align="center">
-
-<img src="assets/AgentThink.png" alt="AgentThink Logo" width="360"/>
 
 <p>
   <a href="https://curryqka.github.io/AgentThink.github.io/">🌐 Project</a> •
@@ -382,3 +368,17 @@ Please cite our work if you use AgentThink in your research:
   year={2025}
 }
 ```
+
+> **Authors:**
+>
+> Kangan Qian\*, Sicong Jiang\*, Yang Zhong\*, Ziang Luo\*, Zilin Huang, Tianze Zhu, Kun Jiang†, Mengmeng Yang, Zheng Fu, Jinyu Miao, Yining Shi, He Zhe Lim, Li Liu, Tianbao Zhou, Huang Yu, Yifei Hu, Guang Li, Guang Chen, Hao Ye†, Lijun Sun, Diange Yang†
+>
+> **Affiliations:**
+>
+> 1 Tsinghua University  
+> 2 McGill University  
+> 3 Xiaomi Corporation  
+> 4 University of Wisconsin – Madison
+>
+> \* Equal contribution, † Corresponding author
+
