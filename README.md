@@ -374,13 +374,11 @@ This project is licensed under [Apache License 2.0](https://www.apache.org/licen
 
 ### Citation
 Please cite our work if you use AgentThink in your research:
-```bibtex
-@misc{qian2025agentthinkunifiedframeworktoolaugmented,
-      title={AgentThink: A Unified Framework for Tool-Augmented Chain-of-Thought Reasoning in Vision-Language Models for Autonomous Driving}, 
-      author={Kangan Qian et al.},
-      year={2025},
-      eprint={2505.15298},
-      archivePrefix={arXiv},
-      url={https://arxiv.org/abs/2505.15298}, 
+```
+@article{qian2025agentthink,
+  title={Agentthink: A unified framework for tool-augmented chain-of-thought reasoning in vision-language models for autonomous driving},
+  author={Qian, Kangan and Jiang, Sicong and Zhong, Yang and Luo, Ziang and Huang, Zilin and Zhu, Tianze and Jiang, Kun and Yang, Mengmeng and Fu, Zheng and Miao, Jinyu and others},
+  journal={arXiv preprint arXiv:2505.15298},
+  year={2025}
 }
 ```
