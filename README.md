@@ -10,8 +10,9 @@ During the development of AgentThink, we drew inspiration from ancient wisdom. A
 > 📜 "君子生非异也，善假于物也。"
 > 
 > "A gentleman is not inherently different from others; he excels by skillfully leveraging external tools."
->
-> This philosophy aligns perfectly with our design principles - by integrating multiple tools and reasoning, AgentThink achieves superior capabilities in complex autonomous driving scenarios.
+> 
+This philosophy aligns perfectly with our design principles - by integrating multiple tools and reasoning, AgentThink achieves superior capabilities in complex autonomous driving scenarios.
+
 ---
 [中文](README_CN.md) ｜ **English**
 
