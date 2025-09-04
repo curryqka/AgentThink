@@ -4,7 +4,7 @@
     
 <div align="center">
 
-<img src="assets/AgentThink.png" alt="AgentThink Logo" width="360"/>
+<img src="assets/AgentThink2.png" alt="AgentThink Logo" width="360"/>
 
 During the development of AgentThink, we drew inspiration from ancient wisdom. As stated by Xunzi:
 > 📜 "君子生非异也，善假于物也。"
