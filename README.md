@@ -23,8 +23,8 @@ This philosophy aligns perfectly with our design principles - by integrating mul
   <a href="https://github.com/curryqka/AgentThink">🔖 Repo</a> •
   <a href="https://www.apache.org/licenses/LICENSE-2.0">🪪 License</a>
 
-  <a href="https://drive.google.com/drive/folders/1RsgJlo3K7xRCUqphWvWECgyOcCvOa9Hx?usp=drive_link">🪚 Model</a> |
-  <a href="https://drive.google.com/drive/folders/1RsgJlo3K7xRCUqphWvWECgyOcCvOa9Hx?usp=drive_link">🔢 Data</a>
+  <a href="https://drive.google.com/drive/folders/1RsgJlo3K7xRCUqphWvWECgyOcCvOa9Hx?usp=sharing">🪚 Model</a> |
+  <a href="https://drive.google.com/drive/folders/1RsgJlo3K7xRCUqphWvWECgyOcCvOa9Hx?usp=sharing">🔢 Data</a>
   
   E-mails: qka23@mails.tsinghua.edu.cn or sicong.jiang@mail.mcgill.ca or luoziang0122@163.com or zhongyangtony@163.com
 </p>
