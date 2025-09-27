@@ -381,7 +381,7 @@ Please cite our work if you use AgentThink in your research:
 > 1 Tsinghua University  
 > 2 McGill University  
 > 3 Xiaomi Corporation  
-> 4 University of Wisconsin – Madison
+> 4 University of Wisconsin-Madison
 >
 > \* Equal contribution, † Corresponding author
 
