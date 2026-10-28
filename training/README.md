@@ -10,6 +10,48 @@ reference implementations built on [ms-swift](https://github.com/modelscope/ms-s
 > same Agent-Driver perception pickles, and the same generated corpus. Training
 > on a different subset will give different scores.
 
+## 0. ms-swift compatibility
+
+The paper uses **ms-swift 3.x** (`swift.llm`, `swift.plugin.ORM`). ms-swift 4.0
+restructured the package and removed `swift.llm`, which breaks the inference
+scripts in this repository. `scripts/env.sh` therefore installs
+`ms-swift[all]>=3.5,<4.0`; the CLI below was checked against **3.5.0** and
+**3.12.6**.
+
+| Paper (Appendix B) | ms-swift 3.x flag |
+|---|---|
+| base model | `--model` |
+| LoRA rank / alpha | `--lora_rank 8 --lora_alpha 32` |
+| 20 epochs | `--num_train_epochs 20` |
+| batch 2 per device | `--per_device_train_batch_size 2` |
+| gradient accumulation 16 | `--gradient_accumulation_steps 16` |
+| learning rate 1e-4 / 1e-5 | `--learning_rate` |
+| bf16 | `--torch_dtype bfloat16` |
+| frozen ViT | `--freeze_vit true` |
+| max sequence length | `--max_length` |
+| evaluate / save every N steps | `--eval_steps` (needs `VAL_DATASET`) / `--save_steps` |
+| keep at most 5 / 20 checkpoints | `--save_total_limit` |
+| ZeRO-2 / ZeRO-3 | `--deepspeed zero2` / `zero3` |
+| warmup ratio | `--warmup_ratio` |
+| dataloader workers | `--dataset_num_proc`, `--dataloader_num_workers` |
+| no gradient-checkpoint reentrancy | `--gradient_checkpointing true --gradient_checkpointing_kwargs '{"use_reentrant": false}'` |
+| GRPO | `--rlhf_type grpo` |
+| G = 2 rollouts | `--num_generations 2` |
+| temperature 1.2 | `--temperature 1.2` |
+| 2048 total / 1024 completion | `--max_length 2048 --max_completion_length 1024` |
+| β = 0.001 | `--beta 0.001` |
+| paper's system instruction | `--system "You are a helpful assistant. ..."` |
+| reward plugin | `--custom_register_path scripts/tools/rewards.py --reward_funcs agentthink_reward` |
+| world size | environment variable `NPROC_PER_NODE` (**not** a CLI flag) |
+
+Notes that caused mismatches with a naive port:
+
+- ms-swift launches `torchrun` only when `NPROC_PER_NODE` (or `NNODES`) is set in
+  the environment. `--nproc_per_node` is not an ms-swift argument.
+- The gradient-checkpointing key is `use_reentrant`, not `reentrancy`.
+- Custom rewards are **classes** registered in `orms`, not bare functions. The
+  module registers `AgentThinkReward` automatically on import.
+
 ## 1. What each stage trains
 
 | Stage | Data | Objective | Paper |

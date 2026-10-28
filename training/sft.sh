@@ -23,6 +23,8 @@ if [[ "${PHASE}" == "phase2" && "${DATA}" == "data/agentthink_sft_phase1.jsonl" 
 fi
 
 export PYTHONPATH="${PWD}:${PYTHONPATH:-}"
+# ms-swift reads the world size from NPROC_PER_NODE; it is not a CLI flag.
+export NPROC_PER_NODE="${NPROC}"
 
 EXTRA_ARGS=()
 if [[ -n "${ADAPTERS}" ]]; then
@@ -53,7 +55,6 @@ swift sft \
   --dataloader_num_workers 4 \
   --dataset_num_proc 4 \
   --gradient_checkpointing true \
-  --gradient_checkpointing_kwargs '{"reentrancy": false}' \
+  --gradient_checkpointing_kwargs '{"use_reentrant": false}' \
   --deepspeed zero2 \
-  --output_dir "${OUTPUT}" \
-  --nproc_per_node "${NPROC}"
+  --output_dir "${OUTPUT}"

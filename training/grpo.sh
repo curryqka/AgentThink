@@ -27,6 +27,8 @@ if [[ ! -f "${DATA}" ]]; then
 fi
 
 export PYTHONPATH="${PWD}:${PYTHONPATH:-}"
+# ms-swift reads the world size from NPROC_PER_NODE; it is not a CLI flag.
+export NPROC_PER_NODE="${NPROC}"
 
 EXTRA_ARGS=()
 if [[ -n "${ADAPTERS}" ]]; then
@@ -45,9 +47,10 @@ swift rlhf \
   --dataset "${DATA}" \
   "${EXTRA_ARGS[@]}" \
   --reward_funcs agentthink_reward \
-  --external_plugins scripts/tools/rewards.py \
+  --custom_register_path scripts/tools/rewards.py \
   --system "You are a helpful assistant. You first think about the reasoning process in the mind and then provide the user with the answer." \
   --torch_dtype bfloat16 \
+  --freeze_vit true \
   --num_train_epochs 8 \
   --per_device_train_batch_size 1 \
   --gradient_accumulation_steps 8 \
@@ -65,5 +68,4 @@ swift rlhf \
   --dataloader_num_workers 4 \
   --dataset_num_proc 4 \
   --deepspeed zero3 \
-  --output_dir "${OUTPUT}" \
-  --nproc_per_node "${NPROC}"
+  --output_dir "${OUTPUT}"

@@ -1,8 +1,7 @@
 # Copyright (c) 2025 The AgentThink Authors. All rights reserved.
 """Structured GRPO rewards for AgentThink (paper Table 1).
 
-Three reward families are implemented as pure, deterministic functions so that
-they can be used directly as ms-swift GRPO reward plugins:
+Three reward families are implemented as pure, deterministic functions:
 
 * :func:`final_answer_reward` - task-level correctness.
 * :func:`step_reasoning_reward` - step matching and chain coherence.
@@ -14,6 +13,15 @@ specifies the three components but not their relative weights; the defaults are
 the values used in our GRPO runs (``final=0.4, step=0.3, tool=0.3``) and can be
 overridden with the ``AGENTTHINK_REWARD_WEIGHTS`` environment variable
 (``"0.4,0.3,0.3"``).
+
+ms-swift integration
+--------------------
+ms-swift 3.x registers rewards as subclasses of ``swift.plugin.ORM`` in the
+``orms`` registry; 4.x moved the same objects to ``swift.rewards``.  At import
+time this module registers :class:`AgentThinkReward` under the name
+``agentthink_reward`` so that ``--reward_funcs agentthink_reward`` works with
+either layout.  The plain functions remain importable for tests and custom
+callers.
 
 All functions accept the ms-swift convention ``(completions, **kwargs)`` and
 return a list of floats, one per completion.
@@ -27,7 +35,14 @@ import re
 from collections import Counter
 from typing import Any, Dict, List, Optional, Sequence
 
-from scripts.tools.tool_chain import parse_tool_chain, validate_tool_chain
+try:
+    from scripts.tools.tool_chain import parse_tool_chain, validate_tool_chain
+except ImportError:  # loaded by ms-swift as a plugin without PYTHONPATH
+    import sys
+    from pathlib import Path
+
+    sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+    from scripts.tools.tool_chain import parse_tool_chain, validate_tool_chain
 
 DEFAULT_WEIGHTS = (0.4, 0.3, 0.3)  # final answer, step reasoning, tool use
 
@@ -389,3 +404,39 @@ def agentthink_reward(
         w_final * final + w_step * step + w_tool * tool
         for final, step, tool in zip(final_rewards, step_rewards, tool_rewards)
     ]
+
+
+# ---------------------------------------------------------------------------
+# ms-swift plugin registration
+# ---------------------------------------------------------------------------
+
+def register_swift_reward():
+    """Register :class:`AgentThinkReward` in ms-swift's ``orms`` registry.
+
+    Works with ms-swift 3.x (``swift.plugin``) and 4.x (``swift.rewards``).
+    Returns ``None`` when ms-swift is not installed, which keeps the module
+    importable for unit tests and standalone data processing.
+    """
+    try:
+        try:  # ms-swift >= 4.0
+            from swift.rewards import ORM, orms
+        except ImportError:  # ms-swift 3.x
+            from swift.plugin import ORM, orms
+    except ImportError:
+        return None
+
+    class AgentThinkReward(ORM):
+        """Adapter matching the reward-class contract of both registry layouts."""
+
+        def __init__(self, args=None, **kwargs):
+            # 4.x instantiates with ``args=``; 3.x calls the class with no args.
+            self.args = args
+
+        def __call__(self, completions, solution=None, key_steps=None, **kwargs):
+            return agentthink_reward(completions, solution, key_steps)
+
+    orms["agentthink_reward"] = AgentThinkReward
+    return AgentThinkReward
+
+
+AGENTTHINK_REWARD_CLASS = register_swift_reward()
