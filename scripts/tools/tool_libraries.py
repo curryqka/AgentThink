@@ -1,18 +1,35 @@
-# Agent for functional calls
-# Written by Jiageng Mao, Modified by Kangan Qian
+# Copyright (c) 2025 The AgentThink Authors. All rights reserved.
+# Originally written by Jiageng Mao (Agent-Driver), modified by Kangan Qian.
+"""Tool library for autonomous-driving tool-augmented reasoning.
 
-from pathlib import Path
-import pickle
-import numpy as np
-import math
+Each tool is exposed twice:
+
+* a module-level function ``get_xxx(data_dict, ...)`` implementing the logic, and
+* a ``get_xxx_info`` JSON-schema dictionary describing it to the VLM, and
+* a method on :class:`FuncAgent` binding the tool to a specific scene.
+
+The five groups (visual, detection, prediction, occupancy, map) follow
+Appendix A of the AgentThink paper.
+"""
+
 import matplotlib.pyplot as plt
-from PIL import Image
-from scripts.tools.utils.geometry import CAR_LENGTH, CAR_WIDTH, GRID_SIZE, rotate_bbox
+import numpy as np
+from PIL import Image, ImageEnhance
+from scripts.tools.utils.box_distance import polygon_distance, polygons_overlap
+from scripts.tools.utils.geometry import (
+    CAR_LENGTH,
+    CAR_WIDTH,
+    GRID_SIZE,
+    MAP_METER,
+    location_to_pixel_coordinate,
+    pixel_coordinate_to_location,
+    rotate_bbox,
+)
+from scripts.tools.tool_prompts import get_ego_prompts
 from skimage.draw import polygon
-from scripts.tools.utils.box_distance import polygons_overlap, polygon_distance
-from scripts.tools.utils.geometry import location_to_pixel_coordinate, pixel_coordinate_to_location, GRID_SIZE
-from third_party.yoloworld_demo import get_2dbox_open_vocabulary_detector
 from third_party.depth_demo import get_3d_location
+from third_party.yoloworld_demo import get_2dbox_open_vocabulary_detector
+
 
 class FuncAgent:
     def __init__(self, data_dict=None, json_data_dict=None) -> None:
@@ -69,18 +86,35 @@ class FuncAgent:
             "samples/CAM_BACK/n015-2018-08-02-17-16-37+0800__CAM_BACK__1533201471437636.jpg",
             "samples/CAM_BACK_LEFT/n015-2018-08-02-17-16-37+0800__CAM_BACK_LEFT__1533201471447423.jpg"
         """
-        cam_path_info_list = self.json_data_dict['image']
-        for cam_path_info in cam_path_info_list:
-            if cam_type == cam_path_info.split('/')[1]:
-                cur_cam_type_index = cam_path_info_list.index(cam_path_info)
-        
-        choosed_image_path = cam_path_info_list[cur_cam_type_index]
+        if self.json_data_dict is None:
+            raise ValueError(
+                "FuncAgent requires json_data_dict with the camera paths to use "
+                "get_open_world_vocabulary_detection."
+            )
+        cam_path_info_list = self.json_data_dict["image"]
+        matches = [
+            path for path in cam_path_info_list if path.split("/")[1] == cam_type
+        ]
+        if not matches:
+            raise ValueError(
+                f"Camera {cam_type!r} not found; available cameras: "
+                f"{[path.split('/')[1] for path in cam_path_info_list]}"
+            )
+        choosed_image_path = matches[0]
 
         prompts, detected_2d_boxs = get_2dbox_open_vocabulary_detector(text=object_names, image_path=choosed_image_path)
 
-        return prompts, detected_2d_boxs 
+        return prompts, detected_2d_boxs
 
-    
+    def get_3d_loc_in_cam(self, object_names, image_path):
+        return get_3d_location(text=object_names, image_path=image_path)
+
+    def resize_image(self, input_path, output_path, target_size, interpolation=Image.BILINEAR):
+        return resize_image(input_path, output_path, target_size, interpolation)
+
+    def crop_image(self, input_path, output_path, box):
+        return crop_image(input_path, output_path, box)
+
 
     """Detection functions""" 
     def get_leading_object_detection(self):
@@ -292,42 +326,42 @@ def adjust_brightness(input_path, output_path, factor):
         bright_img = enhancer.enhance(factor)
         bright_img.save(output_path)
 
-get_open_world_vocabulary_detection_info ={
+get_open_world_vocabulary_detection_info = {
     "name": "get_open_world_vocabulary_detection",
-    "description": "Given a list of words of object(e.g.['car', 'bike', 'traffic light']), get the detection of the object, the function will return its 2d position and size within the camera coordinate system. If there is no text-related object, return None",
+    "description": "Given a list of object words (e.g. ['car', 'bike', 'traffic light']), detect them in the specified camera and return their 2D positions and sizes in the camera coordinate system. If no related object is found, return None.",
     "parameters": {
-      "type": "object",
-      "properties": {
-            "text": {
+        "type": "object",
+        "properties": {
+            "object_names": {
                 "type": "list",
-                "description": "a list contains the words to detect",
+                "description": "a list containing the words to detect",
             },
-            "image_path": {
+            "cam_type": {
                 "type": "str",
-                "description": "the image path related to the image."
-            }
+                "description": "camera name, e.g. CAM_FRONT, CAM_BACK_LEFT",
+            },
         },
-        "required": ["text", "image_path"],
+        "required": ["object_names", "cam_type"],
     },
 }
 
 
-get_3d_loc_in_cam_info ={
+get_3d_loc_in_cam_info = {
     "name": "get_3d_loc_in_cam",
-    "description": "Given an input image and a set of object-related keywords(specified by a List of object words, e.g.['pedestrian in red T-shirt', 'black SUV']), this function calculates the depth value for each pixel in the image. It then determines and returns the 3D location of the specified objects within the camera coordinate system.",
+    "description": "Given an input image and a set of object-related keywords (a list of object words, e.g. ['pedestrian in red T-shirt', 'black SUV']), this function calculates the depth value for each pixel and returns the 3D location of the specified objects within the camera coordinate system.",
     "parameters": {
-      "type": "object",
-      "properties": {
-            "text": {
+        "type": "object",
+        "properties": {
+            "object_names": {
                 "type": "list",
-                "description": "a list contains the words to detect",
+                "description": "a list containing the words to detect",
             },
             "image_path": {
                 "type": "str",
-                "description": "the image path related to the image."
-            }
+                "description": "path to the image",
+            },
         },
-        "required": ["text", "image_path"],
+        "required": ["object_names", "image_path"],
     },
 }
 
@@ -477,7 +511,7 @@ get_all_object_detections_info ={
 
 def get_all_object_detections(data_dict):
     objects = data_dict["objects"]
-    prompts = f"Full object detections:\n"
+    prompts = "Full object detections:\n"
     detected_objs = []
     for obj in objects:
         obj_x, obj_y = obj["bbox"][:2]
@@ -487,7 +521,9 @@ def get_all_object_detections(data_dict):
         prompts = None
     return prompts, detected_objs
 
-def check_rotate_object_collision_for_planned_trajectory(trajectory, data_dict, safe_margin=1.):
+def check_rotate_object_collision_for_planned_trajectory(
+    trajectory, data_dict, safe_margin=1.0, debug=False
+):
     objects = data_dict["objects"]
 
     if debug:
@@ -643,7 +679,7 @@ def check_drivable_of_planned_trajectory(trajectory, data_dict):
                 all_drivable = False
             drivable.append(drivable_map[X, Y])
     if all_drivable:
-        prompts += f"All waypoints of the planned trajectory are in drivable regions\n"
+        prompts += "All waypoints of the planned trajectory are in drivable regions\n"
     return prompts, drivable
 
 def check_drivable_of_planned_trajectory_and_surrounding(trajectory, data_dict):
@@ -670,7 +706,7 @@ def check_drivable_of_planned_trajectory_and_surrounding(trajectory, data_dict):
                 all_drivable = False
             drivable.append(drivable_map[X, Y])
     if all_drivable:
-        prompts += f"All waypoints of the planned trajectory are in drivable regions\n"
+        prompts += "All waypoints of the planned trajectory are in drivable regions\n"
     return prompts, drivable
 
 get_lane_category_at_locations_info = {
@@ -824,7 +860,7 @@ def get_current_shoulder(data_dict):
         if left_shoulder is not None and right_shoulder is not None:
             prompts += f"Current ego-vehicle's distance to left shoulder is {left_shoulder}m and right shoulder is {right_shoulder}m\n"
         elif left_shoulder is None and right_shoulder is None:
-            prompts += f"Current ego-vehicle's distance to shoulders are uncertain\n"
+            prompts += "Current ego-vehicle's distance to shoulders are uncertain\n"
         elif left_shoulder is None and right_shoulder is not None:
             prompts += f"Current ego-vehicle's distance to left shoulder is uncertain and distance to right shoulder is {right_shoulder}m\n"
         elif left_shoulder is not None and right_shoulder is None:
@@ -940,7 +976,7 @@ def get_current_lane_divider(data_dict):
         if left_lane_divider is not None and right_lane_divider is not None:
             prompts += f"Current ego-vehicle's distance to left lane_divider is {left_lane_divider}m and distance to right lane_divider is {right_lane_divider}m\n"
         elif left_lane_divider is None and right_lane_divider is None:
-            prompts += f"Current ego-vehicle's distance to both lane_dividers are uncertain\n"
+            prompts += "Current ego-vehicle's distance to both lane_dividers are uncertain\n"
         elif left_lane_divider is None and right_lane_divider is not None:
             prompts += f"Current ego-vehicle's distance to left lane_divider is uncertain and distance to right lane_divider is {right_lane_divider}m\n"
         elif left_lane_divider is not None and right_lane_divider is None:
@@ -1271,7 +1307,7 @@ def check_occupancy_for_planned_trajectory(trajectory, data_dict):
         else:
             continue
     if not collision:
-        prompts += f"The planned trajectory does not collide with any other objects.\n"
+        prompts += "The planned trajectory does not collide with any other objects.\n"
     return prompts, collision
 
 def check_occupancy_for_planned_trajectory_and_surrounding(trajectory, data_dict):
@@ -1302,7 +1338,7 @@ def check_occupancy_for_planned_trajectory_and_surrounding(trajectory, data_dict
         else:
             continue
     if not collision:
-        prompts += f"The planned trajectory does not collide with any other objects.\n"
+        prompts += "The planned trajectory does not collide with any other objects.\n"
     return prompts, collision
 
 def check_collision(car_length, car_width, trajectory, occ_map):
