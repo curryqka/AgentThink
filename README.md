@@ -76,8 +76,7 @@ This philosophy is the design principle of AgentThink: combine multiple driving 
 ## 📰 News
 
 - **2025.10** — Repository refactor: shared inference runner, training code, GRPO
-  rewards, tool-use metrics, unit tests and a complete reproduction guide
-  ([summary](docs/REFACTOR_SUMMARY.zh-CN.md)).
+  rewards, tool-use metrics, unit tests and a complete reproduction guide.
 - **2025.08.20** — AgentThink was accepted to **EMNLP 2025 Findings**.
 - **2025.07.02** — v1.1 released with demo and sample data.
 - **2025.05.22** — Paper published on arXiv.
@@ -115,6 +114,7 @@ conda activate agentthink
 pip install -r requirements.txt
 
 # ms-swift (inference + training engine)
+# Requires 3.x: ms-swift 4.0 removed `swift.llm`, which inference/ imports.
 bash scripts/env.sh
 
 # optional: Qwen2.5-VL demo dependencies
@@ -394,8 +394,7 @@ AgentThink/
 ├── assets/                       # figures and demo media
 ├── demo_image/                   # demo camera images
 ├── docs/
-│   ├── pipeline.md               # artifact contract + reproduction checklist
-│   └── REFACTOR_SUMMARY.zh-CN.md # 本次整理与修复摘要
+│   └── pipeline.md               # artifact contract + reproduction checklist
 ├── evaluation/
 │   ├── prompts.py                # all model-visible prompts
 │   ├── runner.py                 # shared dataset / distributed / generation

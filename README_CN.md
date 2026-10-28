@@ -71,7 +71,7 @@
 ## 📰 动态
 
 - **2025.10** —— 仓库重构：共享推理入口、补齐训练代码、GRPO 奖励、工具指标、单元测试与
-  完整复现指南（[变更摘要](docs/REFACTOR_SUMMARY.zh-CN.md)）。
+  完整复现指南。
 - **2025.08.20** —— AgentThink 被 **EMNLP 2025 Findings** 接收。
 - **2025.07.02** —— v1.1 发布，包含 demo 与样例数据。
 - **2025.05.22** —— 论文上传 arXiv。
@@ -109,6 +109,7 @@ conda activate agentthink
 pip install -r requirements.txt
 
 # ms-swift（推理与训练引擎）
+# 必须使用 3.x：4.0 移除了 inference/ 依赖的 `swift.llm`
 bash scripts/env.sh
 
 # 可选：Qwen2.5-VL demo 依赖
@@ -379,8 +380,7 @@ AgentThink/
 ├── assets/                       # 图片与演示素材
 ├── demo_image/                   # demo 相机图像
 ├── docs/
-│   ├── pipeline.md               # 产物链路 + 复现检查表
-│   └── REFACTOR_SUMMARY.zh-CN.md # 本次整理与修复摘要
+│   └── pipeline.md               # 产物链路 + 复现检查表
 ├── evaluation/
 │   ├── prompts.py                # 所有模型可见 prompt
 │   ├── runner.py                 # 共享数据集 / 分布式 / 生成逻辑
