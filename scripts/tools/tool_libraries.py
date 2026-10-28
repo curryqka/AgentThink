@@ -418,7 +418,6 @@ def get_surrounding_object_detections(data_dict):
     if len(detected_objs) == 0:
         prompts = None
 
-    # breakpoint()
     return prompts, detected_objs
 
 get_front_object_detections_info = {
@@ -787,7 +786,6 @@ def get_distance_to_shoulder_at_locations(locations, data_dict):
     boundary_map = data_dict["map"]["lane"][2].T
     prompts = "Distance to both sides of road shoulders of selected locations:\n"
     distance_to_shoulder = []
-    # breakpoint()
     for x, y in locations:
         X, Y, valid = location_to_pixel_coordinate(x, y)
         if not valid:
@@ -1071,9 +1069,7 @@ def get_future_trajectories_for_specific_objects(object_ids, data_dict, short=Fa
     prompts = "Future trajectories for specific objects:\n"
     detected_objs = []
     for obj in objects:
-        # breakpoint()
-
-        if 'o'+str(obj["id"]) in object_ids:
+        if 'o' + str(obj["id"]) in object_ids:
             if short:
                 prompts += f"Object type: {obj['name']}, object id: {obj['id']}, moving to: ({obj['traj'][5, 0]:.2f}, {obj['traj'][5, 1]:.2f})\n"
             else:

@@ -438,23 +438,27 @@ AgentThink/
 
 ## ❓ FAQ
 
-**Can I run this on 2 or 4 A800 GPUs?**  
+**Can I run this on 2 or 4 A800 GPUs?**
+
 Inference: yes, 1 × 80 GB is enough for a merged 7B model. SFT: 4 × A800 works with
 the default settings, 2 × A800 with a smaller `--max_length`. GRPO: 4 × 80 GB is
 the practical minimum with a reduced completion length; the paper used 16 × A800.
 See [training/README.md](training/README.md#2-hardware).
 
-**Why does `inference_withtool.py` not answer the question?**  
+**Why does `inference_withtool.py` not answer the question?**
+
 It is the tool **planner**: it emits the structured chain that
 `gen_tool_result_data.py` executes. The answering script is
 `inference_agentthink.py`. This separation is what the paper calls the data
 generation and inference stages.
 
-**Where does `tool_result` come from?**  
+**Where does `tool_result` come from?**
+
 From executing the planned tools on Agent-Driver perception pickles — not from
 the VLM. Details in [docs/pipeline.md](docs/pipeline.md#1c-execute-the-planned-tools).
 
-**I cannot reproduce MCQ 71.35.**  
+**I cannot reproduce MCQ 71.35.**
+
 Work through the six-point checklist in
 [docs/pipeline.md](docs/pipeline.md#5-reproduction-checklist-issue-6). The most
 common causes are using the base model, a single-camera image instead of the

@@ -423,20 +423,24 @@ AgentThink/
 
 ## ❓ 常见问题
 
-**只有 2 张或 4 张 A800 能跑吗？**  
+**只有 2 张或 4 张 A800 能跑吗？**
+
 推理可以，7B 合并模型单张 80 GB 足够。SFT 在 4 卡上可用默认配置，2 卡需要调小
 `--max_length`。GRPO 受生成吞吐限制，4×80 GB 是实际下限（缩短 completion 长度），
 论文使用 16×A800。详见 [training/README.md](training/README.md#2-hardware)。
 
-**`inference_withtool.py` 为什么不直接回答？**  
+**`inference_withtool.py` 为什么不直接回答？**
+
 它是工具**规划器**，输出的是交给 `gen_tool_result_data.py` 执行的结构化链；
 真正作答的是 `inference_agentthink.py`。这正是论文中数据生成与推理两个阶段的区别。
 
-**`tool_result` 从哪里来？**  
+**`tool_result` 从哪里来？**
+
 来自在 Agent-Driver 感知 pickle 上执行规划出的工具，不是 VLM 输出。详见
 [docs/pipeline.md](docs/pipeline.md#1c-execute-the-planned-tools)。
 
-**复现不出 MCQ 71.35 怎么办？**  
+**复现不出 MCQ 71.35 怎么办？**
+
 按 [docs/pipeline.md](docs/pipeline.md#5-reproduction-checklist-issue-6) 的六项检查表逐条排查。
 最常见原因：用了基座模型、用了单相机图而非拼接图、`tool_result` 为空、生成被截断。
 
