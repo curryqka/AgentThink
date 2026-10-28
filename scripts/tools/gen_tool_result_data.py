@@ -48,6 +48,14 @@ from scripts.tools.tool_prompts import (  # noqa: E402
 class AgentThink:
     """Bind a Tool-CoT chain to one nuScenes frame."""
 
+    #: Keyword -> category used to enforce the per-category call limits.
+    CATEGORY_KEYWORDS = {
+        "detection": ("detection",),
+        "prediction": ("trajector", "future"),
+        "occupancy": ("occupancy",),
+        "map": ("drivable", "lane", "shoulder", "crossing"),
+    }
+
     def __init__(
         self,
         token: str,
@@ -98,21 +106,44 @@ class AgentThink:
         return value
 
     def _build_kwargs(self, method, parameters: List[Any]) -> Optional[Dict[str, Any]]:
-        names = [
-            parameter.name
+        """Bind the model's positional parameter list to the method signature.
+
+        Parameters with defaults (e.g. ``return_score``) are optional, so a
+        shorter list from the planner is still valid.
+        """
+        signature_params = [
+            parameter
             for parameter in inspect.signature(method).parameters.values()
+            if parameter.kind
+            in (inspect.Parameter.POSITIONAL_ONLY, inspect.Parameter.POSITIONAL_OR_KEYWORD)
         ]
-        if not names:
-            return {}
-        if len(parameters) != len(names):
-            if len(names) == 1:
-                return {names[0]: self._coerce_argument(parameters, names[0])}
+        required = [
+            parameter.name
+            for parameter in signature_params
+            if parameter.default is inspect.Parameter.empty
+        ]
+        optional = [
+            parameter.name
+            for parameter in signature_params
+            if parameter.default is not inspect.Parameter.empty
+        ]
+
+        if len(parameters) == len(required):
+            names = required
+        elif len(parameters) == len(required) + len(optional):
+            names = required + optional
+        elif len(required) == 1:
+            names = required
+        else:
             if self.verbose:
                 print(
                     f"Mismatched arguments for {method.__name__}: "
-                    f"got {parameters}, expected {names}"
+                    f"got {parameters}, expected {required}"
                 )
             return None
+
+        if len(names) == 1 and len(parameters) != 1:
+            return {names[0]: self._coerce_argument(parameters, names[0])}
         return {
             name: self._coerce_argument(value, name)
             for name, value in zip(names, parameters)
@@ -152,6 +183,13 @@ class AgentThink:
             print(f"Tool: {tool_name}\nArgs: {kwargs}\nPrompt: {tool_prompt}")
         return {"name": tool_name, "args": kwargs, "prompt": tool_prompt or ""}
 
+    @classmethod
+    def category_for(cls, tool_name: str) -> Optional[str]:
+        for category, keywords in cls.CATEGORY_KEYWORDS.items():
+            if any(keyword in tool_name for keyword in keywords):
+                return category
+        return None
+
     # -- chain execution -----------------------------------------------------
     def get_tool_results(
         self,
@@ -170,14 +208,14 @@ class AgentThink:
         for node in cot_data.get("Chain", []):
             tool = node.get("Tool") if isinstance(node, dict) else None
             tool_name = (tool or {}).get("function_name", "")
-            for category, limit in self.max_calls.items():
-                if category in tool_name:
-                    call_counts[category] += 1
-                    if call_counts[category] > limit:
-                        tool_responses.append(None)
-                        tool_name = ""
-                    break
+            category = self.category_for(tool_name)
+            if category:
+                call_counts[category] += 1
+                if call_counts[category] > self.max_calls[category]:
+                    tool_responses.append(None)
+                    continue
             if not tool_name:
+                tool_responses.append(None)
                 continue
 
             tool_responses.append(self.tool_call(node))
@@ -243,7 +281,13 @@ def main() -> None:
                 print(f"Missing perception pickle for frame {frame_token}")
             continue
 
-        ego_prompts = get_ego_prompts(agent.data_dict)
+        try:
+            ego_prompts = get_ego_prompts(agent.data_dict)
+        except (KeyError, IndexError, TypeError) as exc:
+            if args.verbose:
+                print(f"Incomplete ego state for frame {frame_token}: {exc}")
+            ego_prompts = ""
+
         tool_responses, system_prompts = agent.get_tool_results(
             cot_data, ego_prompts=ego_prompts
         )

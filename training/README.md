@@ -80,12 +80,13 @@ export VAL_DATASET=data/agentthink_val.jsonl   # optional
 # Phase 1
 bash training/sft.sh phase1 data/agentthink_sft_phase1.jsonl outputs/sft_phase1
 
-# Phase 2 (initialise from the phase-1 adapter via MODEL=...)
-MODEL=outputs/sft_phase1/v2-*/checkpoint-* \
+# Phase 2 (initialise from the phase-1 adapter)
+ADAPTERS=outputs/sft_phase1/v2-*/checkpoint-* \
   bash training/sft.sh phase2 data/agentthink_sft_phase2.jsonl outputs/sft_phase2
 
 # GRPO from the phase-2 adapter
-bash training/grpo.sh outputs/sft_phase2/v2-*/checkpoint-* \
+ADAPTERS=outputs/sft_phase2/v2-*/checkpoint-* \
+  bash training/grpo.sh Qwen/Qwen2.5-VL-7B-Instruct \
     data/agentthink_grpo.jsonl outputs/grpo
 
 # Merge the final adapter for inference

@@ -7,16 +7,18 @@
 # temperature 1.2, max_length 2048 / completion 1024, beta 0.001, ZeRO-3.
 #
 # Usage:
-#   bash training/grpo.sh [ADAPTER_OR_MODEL] [DATA_JSONL] [OUTPUT_DIR]
+#   ADAPTERS=/path/to/sft_adapter bash training/grpo.sh [MODEL] [DATA_JSONL] [OUTPUT_DIR]
 #
-# The starting point is normally the phase-2 SFT adapter, e.g.
-#   outputs/agentthink_sft_phase2/v2-xxxx/checkpoint-xxxx
+# Start from the phase-2 SFT adapter, e.g.
+#   ADAPTERS=outputs/agentthink_sft_phase2/v2-xxxx/checkpoint-xxxx \
+#     bash training/grpo.sh Qwen/Qwen2.5-VL-7B-Instruct
 set -euo pipefail
 
 MODEL="${1:-Qwen/Qwen2.5-VL-7B-Instruct}"
 DATA="${2:-data/agentthink_grpo.jsonl}"
 OUTPUT="${3:-outputs/agentthink_grpo}"
 NPROC="${NPROC_PER_NODE:-8}"
+ADAPTERS="${ADAPTERS:-}"
 
 if [[ ! -f "${DATA}" ]]; then
   echo "Dataset not found: ${DATA}" >&2
@@ -27,6 +29,9 @@ fi
 export PYTHONPATH="${PWD}:${PYTHONPATH:-}"
 
 EXTRA_ARGS=()
+if [[ -n "${ADAPTERS}" ]]; then
+  EXTRA_ARGS+=(--adapters "${ADAPTERS}")
+fi
 if [[ -n "${VAL_DATASET:-}" ]]; then
   EXTRA_ARGS+=(--val_dataset "${VAL_DATASET}" --eval_steps 500 --per_device_eval_batch_size 1)
 fi

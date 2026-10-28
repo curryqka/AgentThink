@@ -246,8 +246,10 @@ python scripts/tools/build_sft_data.py \
 
 # 训练
 NPROC_PER_NODE=8 bash training/sft.sh phase1 data/agentthink_sft_phase1.jsonl
-NPROC_PER_NODE=8 bash training/sft.sh phase2 data/agentthink_sft_phase2.jsonl
-NPROC_PER_NODE=8 bash training/grpo.sh <phase2_adapter> data/agentthink_grpo.jsonl
+ADAPTERS=<phase1_adapter> NPROC_PER_NODE=8 \
+  bash training/sft.sh phase2 data/agentthink_sft_phase2.jsonl
+ADAPTERS=<phase2_adapter> NPROC_PER_NODE=8 \
+  bash training/grpo.sh Qwen/Qwen2.5-VL-7B-Instruct data/agentthink_grpo.jsonl
 
 # 合并适配器供推理使用
 bash training/merge_lora.sh <grpo_adapter> pretrained_model/AgentThink

@@ -16,6 +16,7 @@ DATA="${2:-data/agentthink_sft_phase1.jsonl}"
 OUTPUT="${3:-outputs/agentthink_sft_${PHASE}}"
 MODEL="${MODEL:-Qwen/Qwen2.5-VL-7B-Instruct}"
 NPROC="${NPROC_PER_NODE:-8}"
+ADAPTERS="${ADAPTERS:-}"
 
 if [[ "${PHASE}" == "phase2" && "${DATA}" == "data/agentthink_sft_phase1.jsonl" ]]; then
   DATA="data/agentthink_sft_phase2.jsonl"
@@ -24,6 +25,9 @@ fi
 export PYTHONPATH="${PWD}:${PYTHONPATH:-}"
 
 EXTRA_ARGS=()
+if [[ -n "${ADAPTERS}" ]]; then
+  EXTRA_ARGS+=(--adapters "${ADAPTERS}")
+fi
 if [[ -n "${VAL_DATASET:-}" ]]; then
   EXTRA_ARGS+=(--val_dataset "${VAL_DATASET}" --eval_steps 1000 --per_device_eval_batch_size 2)
 fi
