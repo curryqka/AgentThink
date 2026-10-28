@@ -105,9 +105,12 @@ AGENTTHINK_REWARD_WEIGHTS="0.4,0.3,0.3" bash training/grpo.sh ...
 | Reward | Function | Sub-scores |
 |---|---|---|
 | Final answer | `final_answer_reward` | exact match / token F1, option-label match for MCQ |
-| Step reasoning | `step_reasoning_reward` | key-step coverage (0.7) + chain coherence (0.3) |
+| Step reasoning | `step_reasoning_reward` | key-step coverage with an ordering bonus (0.7) + chain coherence (0.3) |
 | Tool use | `tool_use_reward` | format compliance (0.4) + integration quality (0.6) |
 | Combined | `agentthink_reward` | weighted sum, default `0.4 / 0.3 / 0.3` |
+
+Both serialisations are supported: the structured Tool-CoT JSON and the text
+trace rendered by `chain_render.py` (`Step N: ... / Tool: name(...)`).
 
 The reward functions are pure Python and unit-tested in `tests/test_rewards.py`.
 

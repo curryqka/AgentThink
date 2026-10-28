@@ -21,6 +21,17 @@ TEXT_COMPLETION = (
     "**Final Answer**: Maintain speed behind the truck."
 )
 
+TRACE_COMPLETION = (
+    "**Step-by-Step Reasoning**:\n"
+    "Step 1: Which object leads the ego vehicle?\n"
+    "Tool: get_leading_object_detection([])\n"
+    "Tool Output: Leading object: truck\n"
+    "Step 2: Where is the lane divider?\n"
+    "Tool: get_current_lane_divider([])\n"
+    "Tool Output: Divider: 1.5 m left\n\n"
+    "**Final Answer**: Maintain speed behind the truck."
+)
+
 JSON_COMPLETION = json.dumps(
     {
         "Question": "What should the ego vehicle do?",
@@ -89,10 +100,12 @@ class RewardTest(unittest.TestCase):
 
     def test_tool_format(self):
         self.assertEqual(tool_format_score(JSON_COMPLETION), 1.0)
+        self.assertEqual(tool_format_score(TRACE_COMPLETION), 1.0)
         self.assertEqual(tool_format_score(TEXT_COMPLETION), 0.0)
 
     def test_tool_integration(self):
         self.assertEqual(tool_integration_score(JSON_COMPLETION), 1.0)
+        self.assertEqual(tool_integration_score(TRACE_COMPLETION), 1.0)
 
     def test_tool_use_range(self):
         rewards = tool_use_reward([JSON_COMPLETION, TEXT_COMPLETION])

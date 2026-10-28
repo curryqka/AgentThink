@@ -198,17 +198,31 @@ def _iter_key_groups(key_steps: Any) -> List[List[str]]:
 
 
 def step_matching_score(reasoning: str, key_steps: Any) -> float:
-    """Fraction of reference key-step groups covered by the reasoning."""
+    """Fraction of reference key-step groups covered, with an order bonus.
+
+    As in Table 1, matching out of order is penalised: a full-coverage chain
+    whose groups appear in the reference order gets 1.0, otherwise 0.9.
+    """
     groups = _iter_key_groups(key_steps)
     if not groups:
         return 0.0
     reasoning_lower = (reasoning or "").lower()
-    matched = sum(
-        1
-        for group in groups
-        if any(alternative.lower() in reasoning_lower for alternative in group)
+
+    positions = []
+    for group in groups:
+        found = [
+            reasoning_lower.find(alternative.lower())
+            for alternative in group
+            if alternative.lower() in reasoning_lower
+        ]
+        if found:
+            positions.append(min(found))
+
+    matched = len(positions) / len(groups)
+    ordered = all(
+        earlier <= later for earlier, later in zip(positions, positions[1:])
     )
-    return matched / len(groups)
+    return matched * (1.0 if ordered else 0.9)
 
 
 def coherence_score(completion: str) -> float:
@@ -261,38 +275,70 @@ def step_reasoning_reward(
 # 3. Tool use reward
 # ---------------------------------------------------------------------------
 
+TEXT_STEP_PATTERN = re.compile(r"Step\s+\d+\s*:")
+TEXT_TOOL_PATTERN = re.compile(r"Tool:\s*([A-Za-z_]\w*)\s*\(")
+TEXT_OBSERVATION_PATTERN = re.compile(r"Tool Output\s*:")
+
+
+def _text_trace_stats(completion: str) -> Dict[str, Any]:
+    """Count the elements of a rendered text trace (SFT / GRPO format)."""
+    return {
+        "steps": len(TEXT_STEP_PATTERN.findall(completion or "")),
+        "tools": len(TEXT_TOOL_PATTERN.findall(completion or "")),
+        "observations": len(TEXT_OBSERVATION_PATTERN.findall(completion or "")),
+        "has_answer": "**Final Answer**" in (completion or ""),
+    }
+
+
 def tool_format_score(completion: str) -> float:
-    """1.0 for a schema-valid Tool-CoT object, 0.0 otherwise."""
+    """Format compliance for either a Tool-CoT JSON object or a text trace.
+
+    * Valid JSON chain: 1.0.
+    * Text trace with ``Step``, ``Tool: name(...)`` and ``**Final Answer**``:
+      1.0 when there is at most one tool call per step, 0.75 otherwise.
+    * Anything else: 0.0.
+    """
     chain = parse_tool_chain(completion)
-    if chain is None:
+    if chain is not None:
+        return 0.0 if validate_tool_chain(chain) else 1.0
+
+    stats = _text_trace_stats(completion)
+    if not (stats["steps"] and stats["tools"] and stats["has_answer"]):
         return 0.0
-    return 0.0 if validate_tool_chain(chain) else 1.0
+    return 1.0 if stats["tools"] <= stats["steps"] else 0.75
 
 
 def tool_integration_score(completion: str, key_steps: Any = None) -> float:
-    """Measure whether tool outputs are woven into the reasoning.
+    """Measure whether tool calls are woven into the reasoning.
 
-    A tool call is well integrated when it belongs to a step with a concrete
-    sub-question and either a guess answer or keywords.  When ``key_steps`` are
-    available, coverage of the reference steps is also required.
+    For JSON chains, a tool call is integrated when its step has a concrete
+    sub-question and either a guess answer or keywords.  For text traces, the
+    tool call must follow a step and the trace should contain the returned
+    observations.  When ``key_steps`` are available, coverage of the reference
+    steps is blended in.
     """
     chain = parse_tool_chain(completion)
-    if not chain or not isinstance(chain.get("Chain"), list):
-        return 0.0
-    steps = [node for node in chain["Chain"] if isinstance(node, dict)]
-    if not steps:
-        return 0.0
-
-    integrated = 0
-    for node in steps:
-        tool = node.get("Tool")
-        if not isinstance(tool, dict) or not tool.get("function_name"):
-            continue
-        has_sub = bool(str(node.get("Sub", "")).strip())
-        has_evidence = bool(node.get("Guess_Answer")) or bool(node.get("key_words"))
-        if has_sub and has_evidence:
-            integrated += 1
-    tool_ratio = integrated / len(steps)
+    if chain and isinstance(chain.get("Chain"), list):
+        steps = [node for node in chain["Chain"] if isinstance(node, dict)]
+        if not steps:
+            return 0.0
+        integrated = 0
+        for node in steps:
+            tool = node.get("Tool")
+            if not isinstance(tool, dict) or not tool.get("function_name"):
+                continue
+            has_sub = bool(str(node.get("Sub", "")).strip())
+            has_evidence = bool(node.get("Guess_Answer")) or bool(node.get("key_words"))
+            if has_sub and has_evidence:
+                integrated += 1
+        tool_ratio = integrated / len(steps)
+    else:
+        stats = _text_trace_stats(completion)
+        if not stats["steps"]:
+            return 0.0
+        tool_ratio = min(stats["tools"] / stats["steps"], 1.0)
+        if stats["tools"] and not stats["observations"]:
+            tool_ratio *= 0.8
 
     if _iter_key_groups(key_steps):
         coverage = step_matching_score(extract_reasoning(completion), key_steps)
