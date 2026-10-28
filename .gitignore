@@ -30,7 +30,9 @@ results/*.json
 results/*.csv
 results/agentthink/*.json
 !results/agentthink/.gitkeep
-progress.json
+progress*.json
+final_cot_*.json
+cot_*.json
 *.log
 
 # Local environment / editor
