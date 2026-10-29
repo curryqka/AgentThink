@@ -2,7 +2,9 @@ import unittest
 
 from scripts.tools.tool_chain import (
     extract_json_object,
+    extract_tool_calls,
     iter_tool_calls,
+    parse_text_tool_calls,
     parse_tool_chain,
     strip_markdown_fences,
     validate_tool_chain,
@@ -70,6 +72,24 @@ class ToolChainTest(unittest.TestCase):
         calls = list(iter_tool_calls(VALID_CHAIN["Chain"]))
         self.assertEqual(calls[0][0], "get_leading_object_detection")
         self.assertEqual(len(calls), 2)
+
+    def test_parse_text_tool_calls(self):
+        text = (
+            "Step 1: look ahead\n"
+            "Tool: get_leading_object_detection([])\n"
+            "Step 2: query range\n"
+            'Tool: get_object_detections_in_range([-5, 5, 0, 20])\n'
+        )
+        calls = parse_text_tool_calls(text)
+        self.assertEqual([call["function_name"] for call in calls],
+                         ["get_leading_object_detection", "get_object_detections_in_range"])
+        self.assertEqual(calls[1]["parameters"], [-5, 5, 0, 20])
+
+    def test_extract_tool_calls_from_json_and_text(self):
+        json_calls = extract_tool_calls(__import__("json").dumps(VALID_CHAIN))
+        self.assertEqual(len(json_calls), 2)
+        text_calls = extract_tool_calls("Tool: get_leading_object_detection([])")
+        self.assertEqual(text_calls[0]["function_name"], "get_leading_object_detection")
 
 
 if __name__ == "__main__":

@@ -121,8 +121,14 @@ python scripts/tools/build_sft_data.py \
 python scripts/tools/build_sft_data.py \
     --input data/tool_results/cot_train_Qwen2.5-VL.json \
     --output data/agentthink_grpo.jsonl \
-    --format agentthink --target grpo
+    --format agentthink --target grpo \
+    --pickle-split train --tool-data-path data/tool_results
 ```
+
+The GRPO rows carry `frame_token`, `pickle_split`, `tool_data_path` and
+`camera_paths` so the multi-turn scheduler can execute tools during rollout.
+`--pickle-split train` is required for the training corpus; use `val` only when
+building an evaluation/rollout set from TEST.
 
 If you only want to warm up on the released reference CoT (no tool traces), use
 `scripts/tools/prepare_swift_data.py` instead.
@@ -156,6 +162,19 @@ GRPO weights can be changed without editing code:
 AGENTTHINK_REWARD_WEIGHTS="0.4,0.3,0.3" bash training/grpo.sh ...
 ```
 
+### Multi-turn tool rollout
+
+GRPO uses ms-swift's `MultiTurnScheduler`. The model emits `Tool: name([...])`
+calls, the scheduler executes them against the Agent-Driver pickle, appends the
+observations to the assistant context, masks those observation tokens from the
+loss, and lets the model continue. Training rows stay prompt-only; the extra
+metadata columns are consumed by the scheduler.
+
+- `MULTI_TURN=true` (default) enables `agentthink_tool_scheduler`.
+- `MAX_TURNS=6` mirrors the paper's six-step limit.
+- Set `MULTI_TURN=false` to fall back to single-turn GRPO.
+- With vLLM server mode, `--vllm_server_pass_dataset true` is added automatically.
+
 Optional environment overrides:
 
 | Variable | Default | Meaning |
@@ -166,6 +185,8 @@ Optional environment overrides:
 | `MAX_COMPLETION_LENGTH` | 1024 | GRPO generated length |
 | `DEEPSPEED` | `zero2` / `zero3` | set empty to disable DeepSpeed |
 | `USE_VLLM` | `false` | set `true` after installing vLLM for faster rollouts |
+| `MULTI_TURN` | `true` | enable tool-executing multi-turn GRPO |
+| `MAX_TURNS` | `6` | maximum rollout turns |
 
 ## 5. Reward functions
 

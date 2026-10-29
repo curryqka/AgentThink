@@ -27,6 +27,7 @@ pipeline, the inference scripts and the unit tests.
 
 from __future__ import annotations
 
+import ast
 import json
 import re
 from typing import Any, Dict, Iterable, List, Optional, Tuple
@@ -123,3 +124,54 @@ def iter_tool_calls(chain: Iterable[Dict[str, Any]]) -> Iterable[Tuple[str, List
         if not isinstance(parameters, list):
             parameters = [parameters]
         yield name, parameters
+
+
+TOOL_LINE_PATTERN = re.compile(
+    r"^\s*Tool:\s*([A-Za-z_]\w*)\s*\((.*)\)", re.MULTILINE
+)
+
+
+def parse_text_tool_calls(text: str) -> List[Dict[str, Any]]:
+    """Parse the SFT text format ``Tool: name([args])`` into tool calls.
+
+    The chain renderer used for SFT writes one call per line. The parameter
+    block is JSON, but older data may contain Python literals or a bare string.
+    """
+    calls = []
+    for name, raw_parameters in TOOL_LINE_PATTERN.findall(text or ""):
+        raw_parameters = raw_parameters.strip()
+        if not raw_parameters:
+            parameters: Any = []
+        else:
+            try:
+                parameters = json.loads(raw_parameters)
+            except (json.JSONDecodeError, TypeError):
+                try:
+                    parameters = ast.literal_eval(raw_parameters)
+                except (ValueError, SyntaxError):
+                    parameters = [raw_parameters]
+        if not isinstance(parameters, list):
+            parameters = [parameters]
+        calls.append({"function_name": name, "parameters": parameters})
+    return calls
+
+
+def extract_tool_calls(text: str) -> List[Dict[str, Any]]:
+    """Extract calls from a structured Tool-CoT JSON or a text trace."""
+    chain = parse_tool_chain(text)
+    if chain and isinstance(chain.get("Chain"), list):
+        calls = []
+        for node in chain["Chain"]:
+            tool = node.get("Tool") if isinstance(node, dict) else None
+            if not isinstance(tool, dict):
+                continue
+            name = tool.get("function_name")
+            if not isinstance(name, str) or not name:
+                continue
+            parameters = tool.get("parameters") or []
+            if not isinstance(parameters, list):
+                parameters = [parameters]
+            calls.append({"function_name": name, "parameters": parameters})
+        if calls:
+            return calls
+    return parse_text_tool_calls(text)

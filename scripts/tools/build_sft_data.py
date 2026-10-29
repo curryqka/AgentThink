@@ -49,6 +49,8 @@ def build_record(
     target: str,
     image_dir: str,
     include_observations: bool,
+    tool_data_path: str = "data/tool_results",
+    pickle_split: str = "train",
 ) -> Optional[dict]:
     idx = item.get("idx") or item.get("id")
     question = item.get("question")
@@ -81,6 +83,18 @@ def build_record(
         "solution": item.get("final_answer", ""),
         "key_steps": key_steps_from_chain(item.get("cot_data") or {}),
     }
+    if target == "grpo":
+        # Extra columns are passed to the multi-turn scheduler via data_dict.
+        parts = str(idx).split("_")
+        record.update(
+            {
+                "idx": idx,
+                "frame_token": parts[1] if len(parts) > 1 else "",
+                "pickle_split": pickle_split,
+                "tool_data_path": tool_data_path,
+                "camera_paths": item.get("image", []),
+            }
+        )
     return record
 
 
@@ -106,6 +120,17 @@ def main() -> None:
     parser.add_argument("--format", choices=["plain", "tool-cot", "agentthink"], default="agentthink")
     parser.add_argument("--target", choices=["sft", "grpo"], default="sft")
     parser.add_argument(
+        "--tool-data-path",
+        default="data/tool_results",
+        help="Agent-Driver pickle root, stored in GRPO rows for multi-turn rollout.",
+    )
+    parser.add_argument(
+        "--pickle-split",
+        choices=["train", "val"],
+        default="train",
+        help="Pickle folder used by the multi-turn scheduler (train for TRAIN).",
+    )
+    parser.add_argument(
         "--no-observations",
         action="store_true",
         help="Omit tool outputs from the trace (SFT phase 1).",
@@ -129,6 +154,8 @@ def main() -> None:
                 target=args.target,
                 image_dir=args.image_dir,
                 include_observations=not args.no_observations,
+                tool_data_path=args.tool_data_path,
+                pickle_split=args.pickle_split,
             )
             if record is None:
                 continue

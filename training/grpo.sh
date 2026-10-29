@@ -24,6 +24,8 @@ MAX_COMPLETION_LENGTH="${MAX_COMPLETION_LENGTH:-1024}"
 USE_VLLM="${USE_VLLM:-false}"
 DEEPSPEED="${DEEPSPEED-zero3}"   # set DEEPSPEED="" to disable DeepSpeed
 GRAD_ACCUM="${GRAD_ACCUM:-8}"
+MULTI_TURN="${MULTI_TURN:-true}"
+MAX_TURNS="${MAX_TURNS:-6}"
 
 if [[ ! -f "${DATA}" ]]; then
   echo "Dataset not found: ${DATA}" >&2
@@ -48,6 +50,12 @@ fi
 if [[ -n "${DEEPSPEED}" ]]; then
   EXTRA_ARGS+=(--deepspeed "${DEEPSPEED}")
 fi
+if [[ "${MULTI_TURN}" == "true" ]]; then
+  EXTRA_ARGS+=(--multi_turn_scheduler agentthink_tool_scheduler --max_turns "${MAX_TURNS}")
+  if [[ "${USE_VLLM}" == "true" ]]; then
+    EXTRA_ARGS+=(--vllm_server_pass_dataset true)
+  fi
+fi
 
 swift rlhf \
   --rlhf_type grpo \
@@ -58,7 +66,7 @@ swift rlhf \
   --dataset "${DATA}" \
   ${EXTRA_ARGS[@]+"${EXTRA_ARGS[@]}"} \
   --reward_funcs agentthink_reward \
-  --custom_register_path scripts/tools/rewards.py \
+  --custom_register_path scripts/tools/agentthink_plugin.py \
   --system "You are a helpful assistant. You first think about the reasoning process in the mind and then provide the user with the answer." \
   --torch_dtype bfloat16 \
   --freeze_vit true \
