@@ -32,6 +32,14 @@ from skimage.draw import polygon
 from third_party.depth_demo import get_3d_location
 from third_party.yoloworld_demo import get_2dbox_open_vocabulary_detector
 
+# Detection ranges in ego-vehicle coordinates (metres): x is lateral, y is
+# longitudinal. They follow the ranges stated in Appendix A of the paper.
+LEADING_HALF_WIDTH_M = 3.0
+LEADING_RANGE_M = 10.0
+SURROUNDING_HALF_RANGE_M = 10.0  # 20 m x 20 m box centred on the ego vehicle
+FRONT_HALF_WIDTH_M = 5.0         # 10 m wide
+FRONT_RANGE_M = 20.0             # 20 m ahead
+
 
 def select_camera_path(camera_paths, cam_type):
     """Return the path of ``cam_type`` from a six-camera list.
@@ -68,34 +76,34 @@ class FuncAgent:
         self.json_data_dict = json_data_dict
         self.short_trajectory_description = False
 
+        # The registry follows Appendix A of the paper: 4 visual, 5 detection,
+        # 5 prediction, 2 occupancy and 7 map tools.
         self.visual_func_infos = [
             get_open_world_vocabulary_detection_info,
             get_3d_loc_in_cam_info,
             resize_image_info,
             crop_image_info,
-
         ]
         self.detection_func_infos = [
             get_leading_object_detection_info,
-            # get_object_detections_in_range_info,
             get_surrounding_object_detections_info,
-            # get_front_object_detections_info,
+            get_front_object_detections_info,
+            get_object_detections_in_range_info,
             get_all_object_detections_info,
         ]
         self.prediction_func_infos = [
             get_leading_object_future_trajectory_info,
-            get_future_trajectories_for_specific_objects_info,
-            # get_future_trajectories_in_range_info,
-            # get_future_waypoint_of_specific_objects_at_timestep_info,
+            get_future_trajectories_specific_objects_info,
+            get_future_trajectories_in_range_info,
+            get_future_waypoint_of_specific_objects_at_timestep_info,
             get_all_future_trajectories_info,
         ]
         self.occupancy_func_infos = [
             get_occupancy_at_locations_for_timestep_info,
-            # check_occupancy_for_planned_trajectory_info,
+            check_occupancy_for_planned_trajectory_info,
         ]
         self.map_func_infos = [
             get_drivable_at_locations_info,
-            # check_drivable_of_planned_trajectory_info,
             get_lane_category_at_locations_info,
             get_distance_to_shoulder_at_locations_info,
             get_current_shoulder_info,
@@ -104,31 +112,25 @@ class FuncAgent:
             get_nearest_pedestrian_crossing_info,
         ]
     """Basic visual information"""
-    def get_open_world_vocabulary_detection(self, object_names:list, cam_type:str):
-        """
-            "idx": "e7ef871f77f44331aefdebc24ec034b7_b10f0cd792b64d16a1a5e8349b20504c_3",
-        "image": [
-            "samples/CAM_FRONT_LEFT/n015-2018-08-02-17-16-37+0800__CAM_FRONT_LEFT__1533201471404844.jpg",
-            "samples/CAM_FRONT/n015-2018-08-02-17-16-37+0800__CAM_FRONT__1533201471412477.jpg",
-            "samples/CAM_FRONT_RIGHT/n015-2018-08-02-17-16-37+0800__CAM_FRONT_RIGHT__1533201471420339.jpg",
-            "samples/CAM_BACK_RIGHT/n015-2018-08-02-17-16-37+0800__CAM_BACK_RIGHT__1533201471427893.jpg",
-            "samples/CAM_BACK/n015-2018-08-02-17-16-37+0800__CAM_BACK__1533201471437636.jpg",
-            "samples/CAM_BACK_LEFT/n015-2018-08-02-17-16-37+0800__CAM_BACK_LEFT__1533201471447423.jpg"
-        """
-        if self.json_data_dict is None:
-            raise ValueError(
-                "FuncAgent requires json_data_dict with the camera paths to use "
-                "get_open_world_vocabulary_detection."
-            )
-        cam_path_info_list = self.json_data_dict["image"]
-        choosed_image_path = select_camera_path(cam_path_info_list, cam_type)
+    def resolve_image_path(self, image: str) -> str:
+        """Resolve a camera name (``CAM_FRONT``) or an image path to a path."""
+        if self.json_data_dict and self.json_data_dict.get("image"):
+            try:
+                return select_camera_path(self.json_data_dict["image"], image)
+            except ValueError:
+                pass
+        return image
 
-        prompts, detected_2d_boxs = get_2dbox_open_vocabulary_detector(text=object_names, image_path=choosed_image_path)
+    def get_open_world_vocabulary_detection(self, object_names: list, image: str):
+        """Detect objects in ``image`` (camera name or path)."""
+        image_path = self.resolve_image_path(image)
+        return get_2dbox_open_vocabulary_detector(
+            text=object_names, image_path=image_path
+        )
 
-        return prompts, detected_2d_boxs
-
-    def get_3d_loc_in_cam(self, object_names, image_path):
-        return get_3d_location(text=object_names, image_path=image_path)
+    def get_3d_loc_in_cam(self, object_names, image: str):
+        """Estimate the 3D location of objects in ``image``."""
+        return get_3d_location(text=object_names, image_path=self.resolve_image_path(image))
 
     def resize_image(self, input_path, output_path, target_size, interpolation=Image.BILINEAR):
         return resize_image(input_path, output_path, target_size, interpolation)
@@ -157,8 +159,14 @@ class FuncAgent:
     def get_leading_object_future_trajectory(self):
         return get_leading_object_future_trajectory(self.data, short=self.short_trajectory_description)
     
+    def get_future_trajectories_specific_objects(self, object_ids):
+        return get_future_trajectories_specific_objects(
+            object_ids, self.data, short=self.short_trajectory_description
+        )
+
+    # Backwards-compatible alias for chains generated with the v1 name.
     def get_future_trajectories_for_specific_objects(self, object_ids):
-        return get_future_trajectories_for_specific_objects(object_ids, self.data, short=self.short_trajectory_description)
+        return self.get_future_trajectories_specific_objects(object_ids)
     
     def get_future_trajectories_in_range(self, x_start, x_end, y_start, y_end):
         return get_future_trajectories_in_range(x_start, x_end, y_start, y_end, self.data, short=self.short_trajectory_description)
@@ -349,7 +357,7 @@ def adjust_brightness(input_path, output_path, factor):
 
 get_open_world_vocabulary_detection_info = {
     "name": "get_open_world_vocabulary_detection",
-    "description": "Given a list of object words (e.g. ['car', 'bike', 'traffic light']), detect them in the specified camera and return their 2D positions and sizes in the camera coordinate system. If no related object is found, return None.",
+    "description": "Given a list of object words (e.g. ['car', 'bike', 'traffic light']), detect the objects in the specified image and return their 2D positions and sizes in the camera coordinate system. If no related object is found, return None.",
     "parameters": {
         "type": "object",
         "properties": {
@@ -357,19 +365,19 @@ get_open_world_vocabulary_detection_info = {
                 "type": "list",
                 "description": "a list containing the words to detect",
             },
-            "cam_type": {
+            "image": {
                 "type": "str",
-                "description": "camera name, e.g. CAM_FRONT, CAM_BACK_LEFT",
+                "description": "camera name (e.g. CAM_FRONT) or image path",
             },
         },
-        "required": ["object_names", "cam_type"],
+        "required": ["object_names", "image"],
     },
 }
 
 
 get_3d_loc_in_cam_info = {
     "name": "get_3d_loc_in_cam",
-    "description": "Given an input image and a set of object-related keywords (a list of object words, e.g. ['pedestrian in red T-shirt', 'black SUV']), this function calculates the depth value for each pixel and returns the 3D location of the specified objects within the camera coordinate system.",
+    "description": "Given an input image and object-related keywords (a list of object words, e.g. ['pedestrian in red T-shirt', 'black SUV']), this function calculates the depth value for each pixel and returns the 3D location of the specified objects within the camera coordinate system.",
     "parameters": {
         "type": "object",
         "properties": {
@@ -377,12 +385,12 @@ get_3d_loc_in_cam_info = {
                 "type": "list",
                 "description": "a list containing the words to detect",
             },
-            "image_path": {
+            "image": {
                 "type": "str",
-                "description": "path to the image",
+                "description": "camera name (e.g. CAM_FRONT) or image path",
             },
         },
-        "required": ["object_names", "image_path"],
+        "required": ["object_names", "image"],
     },
 }
 
@@ -408,7 +416,10 @@ def get_leading_object_detection(data_dict):
     for obj in objects:
         # search for the leading object (at the same lane and in front of the ego vehicle in 10m)
         obj_x, obj_y = obj["bbox"][:2]
-        if abs(obj_x) < 3.0 and obj_y >= 0.0 and obj_y < 10.0:
+        if (
+            abs(obj_x) < LEADING_HALF_WIDTH_M
+            and 0.0 <= obj_y < LEADING_RANGE_M
+        ):
             prompts += f"Leading object detected, object type: {obj['name']}, object id: {obj['id']}, position: ({obj_x:.2f}, {obj_y:.2f}), size: ({obj['bbox'][3]:.2f}, {obj['bbox'][4]:.2f})\n"
             detected_objs.append(obj)
     if len(detected_objs) == 0:
@@ -417,7 +428,7 @@ def get_leading_object_detection(data_dict):
 
 get_surrounding_object_detections_info = {
     "name": "get_surrounding_object_detections",
-    "description": "Get the detections of the surrounding objects in a 20m*20m range, the function will return a list of surroundind object ids and their positions and sizes. If there is no surrounding object, return None",
+    "description": "Get the detections of the surrounding objects within a 20m x 20m range centred on the ego vehicle. Returns a list of surrounding object ids with their positions and sizes, or None if there is no surrounding object.",
     "parameters": {
       "type": "object",
       "properties": {},
@@ -433,7 +444,10 @@ def get_surrounding_object_detections(data_dict):
     for obj in objects:
         # search for the surrounding objects (20m*20m range)
         obj_x, obj_y = obj["bbox"][:2]
-        if abs(obj_x) < 20.0 and abs(obj_y) < 20.0:
+        if (
+            abs(obj_x) < SURROUNDING_HALF_RANGE_M
+            and abs(obj_y) < SURROUNDING_HALF_RANGE_M
+        ):
             prompts += f"Surrounding object detected, object type: {obj['name']}, object id: {obj['id']}, position: ({obj_x:.2f}, {obj_y:.2f}), size: ({obj['bbox'][3]:.2f}, {obj['bbox'][4]:.2f})\n"
             detected_objs.append(obj)
     if len(detected_objs) == 0:
@@ -458,7 +472,10 @@ def get_front_object_detections(data_dict):
     for obj in objects:
         # search for the front objects (10m*20m range)
         obj_x, obj_y = obj["bbox"][:2]
-        if abs(obj_x) < 5.0 and obj_y >= 0.0 and obj_y < 20.0:
+        if (
+            abs(obj_x) < FRONT_HALF_WIDTH_M
+            and 0.0 <= obj_y < FRONT_RANGE_M
+        ):
             prompts += f"Front object detected, object type: {obj['name']}, object id: {obj['id']}, position: ({obj_x:.2f}, {obj_y:.2f}), size: ({obj['bbox'][3]:.2f}, {obj['bbox'][4]:.2f})\n"
             detected_objs.append(obj)
     if len(detected_objs) == 0:
@@ -647,7 +664,9 @@ def get_drivable_at_locations(locations, data_dict):
     for x, y in locations:
         X, Y, valid = location_to_pixel_coordinate(x, y)
         if not valid:
-            drivable.append(True)
+            # Appendix A: out-of-scope locations return None.
+            drivable.append(None)
+            prompts += f"Location ({x:.2f}, {y:.2f}) is outside the map scope\n"
             continue
         else:
             if drivable_map[X, Y]:
@@ -752,7 +771,7 @@ get_lane_category_at_locations_info = {
                 "description": "whether to return the probability score of the lane category",
             },
         },
-        "required": ["locations", "return_score"],
+        "required": ["locations"],
     },
 }
 
@@ -1055,42 +1074,48 @@ def get_leading_object_future_trajectory(data_dict, short=False):
     for obj in objects:
         # search for the leading object (at the same lane and in front of the ego vehicle in 10m)
         obj_x, obj_y = obj["bbox"][:2]
-        if abs(obj_x) < 3.0 and obj_y >= 0.0 and obj_y < 10.0:
+        if (
+            abs(obj_x) < LEADING_HALF_WIDTH_M
+            and 0.0 <= obj_y < LEADING_RANGE_M
+        ):
             if short:
                 prompts += f"Leading object found, object type: {obj['name']}, object id: {obj['id']}, moving to: ({obj['traj'][5, 0]:.2f}, {obj['traj'][5, 1]:.2f})\n"
             else:
                 trajectory_points = ', '.join(f"({x:.2f}, {y:.2f})" for x, y in obj['traj'][:6])
-                prompts += f"Leading object found, object type: {obj['name']}, object id: {obj['id']}, future waypoint coordinates in 6s: [{trajectory_points}]\n"
+                prompts += f"Leading object found, object type: {obj['name']}, object id: {obj['id']}, future waypoint coordinates in 3s: [{trajectory_points}]\n"
             detected_objs.append(obj)
     if len(detected_objs) == 0:
         prompts = None
     return prompts, detected_objs
 
-get_future_trajectories_for_specific_objects_info = {
-    "name": "get_future_trajectories_for_specific_objects",
-    "description": "Get the future trajectories of specific objects (specified by a List of object ids, e.g.['o1', 'o2', 'o3']), the function will return trajectories for each object. If there is no object, return None",
+get_future_trajectories_specific_objects_info = {
+    "name": "get_future_trajectories_specific_objects",
+    "description": "Get the future trajectories of specific objects (specified by a list of object ids, e.g. ['o1', 'o2', 'o3']); the function returns the trajectories for each object. If there is no such object, return None",
     "parameters": {
         "type": "object",
         "properties": {
             "object_ids": {
                 "type": "array",
                 "items": {
-                    "type": "integer",
-                    "minimum": 0,
+                    "type": ["integer", "string"],
                 },
-                "description": "a list of integer object ids",
+                "description": "object ids as returned by the detection tools, e.g. [1, 2] or [\"o1\", \"o2\"]",
             },
         },
         "required": ["object_ids"],
     },
 }
 
-def get_future_trajectories_for_specific_objects(object_ids, data_dict, short=False):
+def get_future_trajectories_specific_objects(object_ids, data_dict, short=False):
     objects = data_dict["objects"]
+    requested = set()
+    for object_id in object_ids:
+        raw = str(object_id)
+        requested.add(raw if raw.startswith("o") else f"o{raw}")
     prompts = "Future trajectories for specific objects:\n"
     detected_objs = []
     for obj in objects:
-        if 'o' + str(obj["id"]) in object_ids:
+        if 'o' + str(obj["id"]) in requested:
             if short:
                 prompts += f"Object type: {obj['name']}, object id: {obj['id']}, moving to: ({obj['traj'][5, 0]:.2f}, {obj['traj'][5, 1]:.2f})\n"
             else:
@@ -1100,6 +1125,12 @@ def get_future_trajectories_for_specific_objects(object_ids, data_dict, short=Fa
     if len(detected_objs) == 0:
         prompts = None
     return prompts, detected_objs
+
+
+# Backwards-compatible alias for chains generated with the v1 name.
+get_future_trajectories_for_specific_objects = (
+    get_future_trajectories_specific_objects
+)
 
 get_future_trajectories_in_range_info = {
     "name": "get_future_trajectories_in_range",
@@ -1141,19 +1172,26 @@ get_future_trajectories_in_range_info = {
 }
 
 def get_future_trajectories_in_range(x_start, x_end, y_start, y_end, data_dict, short=False):
+    x_start, x_end = float(x_start), float(x_end)
+    y_start, y_end = float(y_start), float(y_end)
     objects = data_dict["objects"]
     prompts = f"Future trajectories in X range {x_start:.2f}-{x_end:.2f} and Y range {y_start:.2f}-{y_end:.2f}:\n"
     detected_objs = []
     for obj in objects:
-        # search for the objects in range
-        obj_x, obj_y = obj["bbox"][:2]
-        if obj_x >= x_start and obj_x <= x_end and obj_y >= y_start and obj_y <= y_end:
-            if short:
-                prompts += f"Object found, object type: {obj['name']}, object id: {obj['id']}, moving to: ({obj['traj'][5, 0]:.2f}, {obj['traj'][5, 1]:.2f})\n"
-            else:
-                trajectory_points = ', '.join(f"({x:.2f}, {y:.2f})" for x, y in obj['traj'][:6])
-                prompts += f"Object found, object type: {obj['name']}, object id: {obj['id']}, future waypoint coordinates in 3s: [{trajectory_points}]\n"
-            detected_objs.append(obj)
+        # The paper defines this tool over "any waypoint", not the current box.
+        trajectory = obj.get("traj", [])
+        in_range = any(
+            x_start <= waypoint[0] <= x_end and y_start <= waypoint[1] <= y_end
+            for waypoint in trajectory
+        )
+        if not in_range:
+            continue
+        if short:
+            prompts += f"Object found, object type: {obj['name']}, object id: {obj['id']}, moving to: ({obj['traj'][5, 0]:.2f}, {obj['traj'][5, 1]:.2f})\n"
+        else:
+            trajectory_points = ', '.join(f"({x:.2f}, {y:.2f})" for x, y in obj['traj'][:6])
+            prompts += f"Object found, object type: {obj['name']}, object id: {obj['id']}, future waypoint coordinates in 3s: [{trajectory_points}]\n"
+        detected_objs.append(obj)
     if len(detected_objs) == 0:
         prompts = None
     return prompts, detected_objs
@@ -1167,17 +1205,16 @@ get_future_waypoint_of_specific_objects_at_timestep_info = {
             "object_ids": {
                 "type": "array",
                 "items": {
-                    "type": "integer",
-                    "minimum": 0,
+                    "type": ["integer", "string"],
                 },
-                "description": "a list of object ids",
+                "description": "object ids as returned by the detection tools, e.g. [1, 2] or [\"o1\", \"o2\"]",
             },
             "timestep": {
                 "type": "integer",
                 "minimum": 1,
-                "maximum": 6,
+                "maximum": 5,
                 "multipleOf" : 1,
-                "description": "the selected timestep of the future trajectory, integer value range [1-6]",
+                "description": "the selected timestep of the future trajectory, integer range [1-5] (0.5 s steps up to 3 s)",
             },
         },
         "required": ["object_ids", "timestep"],
@@ -1185,17 +1222,26 @@ get_future_waypoint_of_specific_objects_at_timestep_info = {
 }
 
 def get_future_waypoint_of_specific_objects_at_timestep(object_ids, timestep, data_dict):
+    timestep = int(timestep)
     objects = data_dict["objects"]
-    prompts = f"Future waypoints of specific objects at time {timestep/2 + 0.5}s:\n"
+    by_id = {obj["id"]: obj for obj in objects}
+    prompts = f"Future waypoints of specific objects at time {timestep / 2 + 0.5:.1f}s:\n"
     detected_objs = []
+    found = False
     for object_id in object_ids:
-        obj = objects[object_id]
-        if len(obj["traj"]) > timestep:
-            prompts += f"object type: {obj['name']}, object id: {obj['id']}, waypoint: ({obj['traj'][timestep, 0]:.2f}, {obj['traj'][timestep, 1]:.2f}) at timestep {timestep}\n"
-        else:
-            prompts = None
+        # Object ids are exposed as "o<id>" by the other prediction tools.
+        raw_id = str(object_id)
+        numeric_id = raw_id[1:] if raw_id.startswith("o") else raw_id
+        try:
+            obj = by_id.get(int(numeric_id))
+        except ValueError:
+            obj = None
+        if obj is None or len(obj["traj"]) <= timestep:
+            continue
+        prompts += f"object type: {obj['name']}, object id: {obj['id']}, waypoint: ({obj['traj'][timestep, 0]:.2f}, {obj['traj'][timestep, 1]:.2f}) at timestep {timestep}\n"
         detected_objs.append(obj)
-    if len(prompts) == 0:
+        found = True
+    if not found:
         prompts = None
     return prompts, detected_objs
 

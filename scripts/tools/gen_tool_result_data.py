@@ -181,6 +181,15 @@ class AgentThink:
 
         if isinstance(parameters, dict):
             # Some planners emit named parameters instead of a positional list.
+            # Accept the v1 names for the visual-tool arguments.
+            aliases = {
+                "cam_type": "image",
+                "image_path": "image",
+                "text": "object_names",
+            }
+            for legacy, current in aliases.items():
+                if legacy in parameters and current not in parameters:
+                    parameters[current] = parameters.pop(legacy)
             accepted = set(inspect.signature(method).parameters)
             kwargs = {
                 key: self._coerce_argument(value, key)

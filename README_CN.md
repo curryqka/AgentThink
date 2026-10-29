@@ -82,7 +82,7 @@
 
 | 模块 | 作用 | 代码 |
 |---|---|---|
-| **1. 数据生成** | GPT-4o 把参考 CoT 改写成结构化 Tool-CoT；在 Agent-Driver 感知结果上执行驾驶工具 | `scripts/tools/` |
+| **1. 数据生成** | GPT-4o 把参考 CoT 改写成结构化 Tool-CoT；在 Agent-Driver 感知结果上执行驾驶工具（[工具清单](docs/tool_library.md)） | `scripts/tools/` |
 | **2. 两阶段训练** | LoRA SFT（阶段一：动作；阶段二：动作 + 观测）后接 GRPO 三类奖励 | `training/` |
 | **3. 推理与评测** | 推理时动态调用工具；DriveLMM-o1 Judge + 工具使用指标 | `evaluation/` |
 
@@ -398,7 +398,8 @@ AgentThink/
 ├── assets/                       # 图片与演示素材
 ├── demo_image/                   # demo 相机图像
 ├── docs/
-│   └── pipeline.md               # 产物链路 + 复现检查表
+│   ├── pipeline.md               # 产物链路 + 复现检查表
+│   └── tool_library.md           # 论文附录 A 工具清单
 ├── evaluation/
 │   ├── prompts.py                # 所有模型可见 prompt
 │   ├── runner.py                 # 共享数据集 / 分布式 / 生成逻辑

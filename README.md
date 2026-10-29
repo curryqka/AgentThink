@@ -87,7 +87,7 @@ AgentThink has three components, mirroring Sec. 3 of the paper:
 
 | Component | What it does | Code |
 |---|---|---|
-| **1. Data generation** | GPT-4o turns reference CoT into structured Tool-CoT; driving tools are executed on Agent-Driver perception results | `scripts/tools/` |
+| **1. Data generation** | GPT-4o turns reference CoT into structured Tool-CoT; driving tools are executed on Agent-Driver perception results ([tool inventory](docs/tool_library.md)) | `scripts/tools/` |
 | **2. Two-stage training** | LoRA SFT (phase 1: actions, phase 2: actions + observations) followed by GRPO with three rewards | `training/` |
 | **3. Inference & evaluation** | Dynamic tool invocation at inference; DriveLMM-o1 judge + tool-use metrics | `evaluation/` |
 
@@ -413,7 +413,8 @@ AgentThink/
 ├── assets/                       # figures and demo media
 ├── demo_image/                   # demo camera images
 ├── docs/
-│   └── pipeline.md               # artifact contract + reproduction checklist
+│   ├── pipeline.md               # artifact contract + reproduction checklist
+│   └── tool_library.md           # Appendix A tool inventory
 ├── evaluation/
 │   ├── prompts.py                # all model-visible prompts
 │   ├── runner.py                 # shared dataset / distributed / generation

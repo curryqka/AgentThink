@@ -9,9 +9,6 @@ perception pickle is available.  The driving-centric tools live in
 
 from __future__ import annotations
 
-from pathlib import Path
-from typing import List
-
 from PIL import Image, ImageEnhance
 
 from third_party.depth_demo import get_3d_location
@@ -34,35 +31,18 @@ class FuncAgent:
         ]
 
     # -- tool implementations ------------------------------------------------
-    def get_open_world_vocabulary_detection(
-        self, object_names: List[str], cam_type: str
-    ):
-        """Detect ``object_names`` in the camera selected by ``cam_type``."""
-        if self.json_data_dict is None:
-            raise ValueError("json_data_dict with camera paths is required")
-
-        camera_paths = [path.replace("\\", "/") for path in self.json_data_dict["image"]]
-        matches = [
-            path
-            for path in camera_paths
-            if len(path.split("/")) >= 2 and path.split("/")[-2] == cam_type
-        ]
-        if not matches:
-            matches = [
-                path
-                for path in camera_paths
-                if f"_{cam_type}_" in f"_{Path(path).stem}_"
-            ]
-        if not matches:
-            raise ValueError(f"Camera {cam_type!r} not found in json_data_dict")
-        return get_2dbox_open_vocabulary_detector(
-            text=object_names, image_path=matches[0]
-        )
+    def get_open_world_vocabulary_detection(self, object_names, image_path):
+        """Tool name used by the catalog (paper Appendix A)."""
+        return self.get_open_world_vocabulary_detection_info(object_names, image_path)
 
     def get_open_world_vocabulary_detection_info(self, object_names, image_path):
         return get_2dbox_open_vocabulary_detector(
             text=object_names, image_path=image_path
         )
+
+    def get_3d_loc_in_cam(self, object_names, image_path):
+        """Tool name used by the catalog (paper Appendix A)."""
+        return self.get_3d_loc_in_cam_info(object_names, image_path)
 
     def get_3d_loc_in_cam_info(self, object_names, image_path):
         return get_3d_location(text=object_names, image_path=image_path)
@@ -198,10 +178,10 @@ get_open_world_vocabulary_detection_info = {
     "parameters": {
         "type": "object",
         "properties": {
-            "text": {"type": "list", "description": "List of objects to detect"},
+            "object_names": {"type": "list", "description": "List of objects to detect"},
             "image_path": {"type": "str", "description": "Path to the image file"},
         },
-        "required": ["text", "image_path"],
+        "required": ["object_names", "image_path"],
     },
 }
 
@@ -212,9 +192,9 @@ get_3d_loc_in_cam_info = {
     "parameters": {
         "type": "object",
         "properties": {
-            "text": {"type": "list", "description": "List of objects to locate"},
+            "object_names": {"type": "list", "description": "List of objects to locate"},
             "image_path": {"type": "str", "description": "Path to the image file"},
         },
-        "required": ["text", "image_path"],
+        "required": ["object_names", "image_path"],
     },
 }
