@@ -128,6 +128,33 @@ git clone https://github.com/modelscope/ms-swift.git third_party/ms-swift-main
 
 把 `depth_anything_v2_vitb.pth` 与 `yolov8x-worldv2.pt` 放到 `pretrained_model/` 下。
 
+### 只复现评测的最短路径
+
+如果已经下载了发布产物，**不需要** GPT-4o，也不需要训练。准备以下四项：
+
+```text
+pretrained_model/AgentThink/                  # 合并后的 checkpoint
+data/DriveLMMo1_TEST_tool_results.jsonl       # 发布版评测 JSONL
+data/image2concat/                            # 六视图拼接图
+data/DriveLMMo1/DriveLMMo1_TEST.json          # 评测真值
+```
+
+然后执行：
+
+```bash
+export PYTHONPATH=$PWD
+export OPENAI_API_KEY=...        # 仅 Judge 需要
+bash scripts/inference_scripts/inference_agentthink.sh \
+    pretrained_model/AgentThink AgentThink
+
+python evaluation/evaluation_script.py \
+    --input results/agentthink/DriveLMMo1_AgentThink.json \
+    --dataset data/DriveLMMo1/DriveLMMo1_TEST.json \
+    --output results/agentthink_eval
+```
+
+这是验证发布 checkpoint 的最快路径；只有要重建 Tool-CoT 语料时才需要第 1 节。
+
 ## 📦 模型与数据
 
 | 产物 | 位置 | 说明 |

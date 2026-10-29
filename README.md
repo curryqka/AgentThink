@@ -135,6 +135,35 @@ git clone https://github.com/modelscope/ms-swift.git third_party/ms-swift-main
 Download `depth_anything_v2_vitb.pth` and `yolov8x-worldv2.pt` into
 `pretrained_model/` (see the layout below).
 
+### Minimal evaluation-only path
+
+If you downloaded the released artifacts, you **do not** need GPT-4o or any
+training step. Put these three items in place:
+
+```text
+pretrained_model/AgentThink/                  # merged checkpoint
+data/DriveLMMo1_TEST_tool_results.jsonl       # released evaluation JSONL
+data/image2concat/                            # six-view collages
+data/DriveLMMo1/DriveLMMo1_TEST.json          # ground truth for the judge
+```
+
+then run:
+
+```bash
+export PYTHONPATH=$PWD
+export OPENAI_API_KEY=...        # only for the judge
+bash scripts/inference_scripts/inference_agentthink.sh \
+    pretrained_model/AgentThink AgentThink
+
+python evaluation/evaluation_script.py \
+    --input results/agentthink/DriveLMMo1_AgentThink.json \
+    --dataset data/DriveLMMo1/DriveLMMo1_TEST.json \
+    --output results/agentthink_eval
+```
+
+This path is the fastest way to check the released checkpoint; Section 1 is only
+needed when rebuilding the Tool-CoT corpus.
+
 ## 📦 Model & data
 
 | Artifact | Where | Notes |
