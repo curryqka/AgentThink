@@ -279,13 +279,14 @@ bash training/merge_lora.sh <grpo_adapter> pretrained_model/AgentThink
 
 ## 3. 推理
 
-三种模式回答三个不同的问题：
+四种模式覆盖规划与执行的拆分：
 
 | 命令 | 输入 | 用途 |
 |---|---|---|
 | `evaluation/inference.py` | `DriveLMMo1_TEST.jsonl` | 纯 CoT 基线 |
 | `evaluation/inference_withtool.py` | `DriveLMMo1_TEST.jsonl` + 工具目录 | 结构化**工具规划**（不执行） |
-| `evaluation/inference_agentthink.py` | `DriveLMMo1_TEST_tool_results.jsonl` | **AgentThink**：基于工具观测作答 |
+| `evaluation/inference_agentthink.py` | `DriveLMMo1_TEST_tool_results.jsonl` | **AgentThink**：基于预计算观测作答 |
+| `evaluation/inference_agentthink_live.py` | 同一 JSONL + Agent-Driver pickle | **在线多轮**：调用 → 执行 → 观测 → 下一轮 |
 
 ```bash
 CKPT=pretrained_model/AgentThink
@@ -293,6 +294,8 @@ CKPT=pretrained_model/AgentThink
 bash scripts/inference_scripts/inference.sh            "$CKPT" baseline
 bash scripts/inference_scripts/inference_withtool.sh   "$CKPT" toolcot
 bash scripts/inference_scripts/inference_agentthink.sh "$CKPT" AgentThink
+bash scripts/inference_scripts/inference_agentthink_live.sh "$CKPT" AgentThink_live \
+    --tool-data-path data/tool_results --pickle-split val --max-turns 6
 ```
 
 所有脚本都支持 `--limit N` 做冒烟测试，并可通过 `NPROC_PER_NODE` 或 `torchrun`
@@ -404,10 +407,12 @@ AgentThink/
 ├── evaluation/
 │   ├── prompts.py                # 所有模型可见 prompt
 │   ├── runner.py                 # 共享数据集 / 分布式 / 生成逻辑
+│   ├── live_runner.py            # 在线调用→执行→观测循环
 │   ├── inference.py              # 纯 CoT
 │   ├── inference_withtool.py     # 结构化工具规划
-│   ├── inference_agentthink.py   # 基于工具观测作答
-│   ├── evaluation_script.py      # DriveLMM-o1 Judge + MCQ
+│   ├── inference_agentthink.py   # 基于预计算观测作答
+│   ├── inference_agentthink_live.py
+│   ├── evaluation_script.py      # DriveLMM-o1 Judge + MCQ + 轨迹指标
 │   ├── tool_metrics.py           # Table 2 工具指标
 │   └── prepare_data.py           # 工具结果 JSON -> 评测 JSONL
 ├── Inference/
@@ -422,6 +427,9 @@ AgentThink/
 │       ├── tool_libraries_simple.py
 │       ├── function_schema.py    # 工具目录渲染
 │       ├── tool_chain.py         # Tool-CoT 解析与校验
+│       ├── tool_runtime.py       # 训练/推理共用的工具执行器
+│       ├── multi_turn.py         # GRPO 多轮调度器
+│       ├── agentthink_plugin.py  # ms-swift 奖励 + 调度器插件
 │       ├── chain_render.py       # 训练文本渲染
 │       ├── agentthink_data_generater_pipeline.py
 │       ├── gen_tool_result_data.py

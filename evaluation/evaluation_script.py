@@ -39,6 +39,7 @@ from evaluation.prompts import (  # noqa: E402
     JUDGE_SYSTEM_PROMPT,
     PAPER_METRIC_COLUMNS,
 )
+from evaluation.tool_metrics import trajectory_stats  # noqa: E402
 from scripts.tools.tool_chain import extract_json_object  # noqa: E402
 
 #: Question-type suffixes (last ``_``-separated field of ``idx``) that are
@@ -223,6 +224,12 @@ def score_sample(
     }
     record.update(scores)
 
+    tool_trace = item.get("tool_trace") or []
+    if tool_trace:
+        record["tool_trace"] = tool_trace
+        record.update(trajectory_stats(tool_trace))
+        record["num_turns"] = item.get("num_turns") or record["num_turns"]
+
     if args.tool_metrics:
         from evaluation.tool_metrics import judge_tool_usage
 
@@ -232,6 +239,7 @@ def score_sample(
             question=question,
             reference=ground_truth_text,
             response=response,
+            tool_trace=tool_trace,
         )
         if tool_scores:
             record["tool_metrics"] = tool_scores
@@ -251,6 +259,23 @@ def summarize(records: List[dict]) -> Dict[str, Any]:
     answered = [r["mcq"] for r in records if r.get("mcq", -1) != -1]
     summary["MCQ"] = round(100.0 * mean(answered), 2) if answered else None
     summary["num_mcq"] = len(answered)
+
+    trajectory_records = [r for r in records if "num_tool_calls" in r]
+    if trajectory_records:
+        summary["Avg Turns"] = round(
+            mean(r.get("num_turns", 0) for r in trajectory_records), 2
+        )
+        summary["Avg Tool Calls"] = round(
+            mean(r["num_tool_calls"] for r in trajectory_records), 2
+        )
+        success_rates = [
+            r["tool_success_rate"]
+            for r in trajectory_records
+            if r.get("tool_success_rate") is not None
+        ]
+        summary["Tool Success"] = (
+            round(100.0 * mean(success_rates), 2) if success_rates else None
+        )
 
     tool_records = [r["tool_metrics"] for r in records if r.get("tool_metrics")]
     if tool_records:
@@ -281,7 +306,11 @@ def write_outputs(records: List[dict], summary: Dict[str, Any], output: Path) ->
     # Flatten the tool metrics for the CSV export.
     rows = []
     for record in records:
-        row = {key: value for key, value in record.items() if key != "tool_metrics"}
+        row = {
+            key: value
+            for key, value in record.items()
+            if key not in ("tool_metrics", "tool_trace")
+        }
         row.update(record.get("tool_metrics") or {})
         rows.append(row)
     if rows:
@@ -300,6 +329,14 @@ def print_summary(summary: Dict[str, Any]) -> None:
     print("  ".join(f"{name:>12}" for name in header))
     values = [summary.get(column, "n/a") for column in PAPER_METRIC_COLUMNS]
     print("  ".join(f"{str(value):>12}" for value in values + [summary.get("MCQ", "n/a")]))
+    if "Avg Turns" in summary:
+        success = summary.get("Tool Success")
+        print(
+            "Trajectory: "
+            f"turns={summary['Avg Turns']}  "
+            f"calls={summary['Avg Tool Calls']}  "
+            f"success={success if success is not None else 'n/a'}%"
+        )
     if "Overall Tool Score" in summary:
         print(
             "Tool metrics: "
