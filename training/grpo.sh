@@ -45,7 +45,7 @@ swift rlhf \
   --lora_rank 8 \
   --lora_alpha 32 \
   --dataset "${DATA}" \
-  "${EXTRA_ARGS[@]}" \
+  ${EXTRA_ARGS[@]+"${EXTRA_ARGS[@]}"} \
   --reward_funcs agentthink_reward \
   --custom_register_path scripts/tools/rewards.py \
   --system "You are a helpful assistant. You first think about the reasoning process in the mind and then provide the user with the answer." \

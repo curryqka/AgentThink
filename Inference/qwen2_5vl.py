@@ -49,10 +49,18 @@ class Qwen25VLInterface:
     """Thin wrapper around ``Qwen2_5_VLForConditionalGeneration``."""
 
     def __init__(self, model_path: str, device: Optional[str] = None) -> None:
+        # Fall back to PyTorch SDPA when FlashAttention is not installed.
+        try:
+            import flash_attn  # noqa: F401
+
+            attn_implementation = "flash_attention_2"
+        except Exception:  # missing or incompatible FlashAttention build
+            attn_implementation = "sdpa"
+
         self.model = Qwen2_5_VLForConditionalGeneration.from_pretrained(
             model_path,
             torch_dtype=torch.bfloat16,
-            attn_implementation="flash_attention_2",
+            attn_implementation=attn_implementation,
             device_map="auto",
         )
         self.processor = AutoProcessor.from_pretrained(model_path)
@@ -159,7 +167,7 @@ def build_tool_prompt(
     """Execute a stored tool chain and concatenate the natural-language outputs."""
     prompt = ""
     for node in tool_chain or []:
-        if not node:
+        if not node or not node.get("name"):
             continue
         response = execute_tool_call(
             func_agent, node["name"], node.get("args") or {}, verbose=verbose

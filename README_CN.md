@@ -113,20 +113,17 @@ pip install -r requirements.txt
 bash scripts/env.sh
 
 # 可选：Qwen2.5-VL demo 依赖
-export QWEN2_5_VL_DIR=/path/to/Qwen2.5-VL
 bash scripts/env_drivemllm.sh
 
 # 让仓库可被 import
 export PYTHONPATH="$PWD:$PYTHONPATH"
 ```
 
-第三方工具仓库需单独克隆：
+深度与检测工具代码已经内置在 `third_party/DAM` 和 `third_party/yoloworld`，
+不需要额外克隆；ms-swift 由 `scripts/env.sh` 安装，只有想用源码版时才需要：
 
 ```bash
-cd third_party
-git clone https://github.com/DepthAnything/Depth-Anything-V2.git
-git clone https://github.com/AILab-CVC/YOLO-World.git
-git clone https://github.com/modelscope/ms-swift.git ms-swift-main
+git clone https://github.com/modelscope/ms-swift.git third_party/ms-swift-main
 ```
 
 把 `depth_anything_v2_vitb.pth` 与 `yolov8x-worldv2.pt` 放到 `pretrained_model/` 下。
@@ -174,13 +171,11 @@ AgentThink/
 ## 🚀 流程总览
 
 ```text
-DriveLMM-o1 问答 + nuScenes 图像 + Agent-Driver pickle
-        │
-        ├─(1a) GPT-4o 生成 Tool-CoT ───────► final_cot_train_<model>.json
-        ├─(1b) 六视图拼接 ────────────────► data/image2concat/*.png
-        ├─(1c) 执行规划出的工具 ──────────► cot_val_Qwen2.5-VL.json
-        ├─(1d) 转成 JSONL ────────────────► DriveLMMo1_TEST_tool_results.jsonl
-        └─(1e) 构建 SFT/GRPO 数据 ────────► data/agentthink_*.jsonl
+训练语料：TRAIN 问答 + train pickle ──► final_cot_train ──► cot_train_Qwen2.5-VL
+                                                        └─► SFT / GRPO 数据
+评测语料：TEST  问答 + val   pickle ──► final_cot_test  ──► cot_val_Qwen2.5-VL
+                                                        └─► TEST 工具结果 JSONL
+两种语料都需要 data/image2concat/ 下的六视图拼接图。
         │
         ├─(2) SFT 阶段一 → SFT 阶段二 → GRPO ──► 合并后的 checkpoint
         ├─(3) 推理（基线 / 规划器 / AgentThink）
@@ -192,34 +187,57 @@ DriveLMM-o1 问答 + nuScenes 图像 + Agent-Driver pickle
 
 ## 1. Tool-CoT 数据生成
 
+QA split 与 Agent-Driver pickle 目录**不是一回事**：
+
+| 语料 | QA json | 生成 `--split` | 执行 `--pickle-split` | 工具结果文件 |
+|---|---|---|---|---|
+| 训练 | `DriveLMMo1_TRAIN.json` | `train` | `train` | `data/tool_results/cot_train_Qwen2.5-VL.json` |
+| 评测 | `DriveLMMo1_TEST.json` | `test` | `val` | `data/tool_results/cot_val_Qwen2.5-VL.json` |
+
 ```bash
 export OPENAI_API_KEY=...            # 可选 OPENAI_BASE_URL=...
 
-# (1a) 从参考答案生成结构化 Tool-CoT
+# (1a) 训练语料：从 TRAIN 参考答案生成结构化 Tool-CoT
 python scripts/tools/agentthink_data_generater_pipeline.py \
     --input data/DriveLMMo1/DriveLMMo1_TRAIN.json \
     --split train --model-name gpt-4o-mini \
     --output final_cot_train_gpt-4o-mini.json
 
-# (1b) 六个相机拼成一张图
+# (1b) 评测语料：从 TEST 问题生成结构化 Tool-CoT
+python scripts/tools/agentthink_data_generater_pipeline.py \
+    --input data/DriveLMMo1/DriveLMMo1_TEST.json \
+    --split test --model-name gpt-4o-mini \
+    --output final_cot_test_gpt-4o-mini.json
+
+# (1c) 六个相机拼成一张图（TRAIN 和 TEST 各跑一次）
 python scripts/tools/data_image_converter.py \
     --json-file-path data/DriveLMMo1/DriveLMMo1_TEST.json \
     --image-root-dir /path/to/nuscenes \
     --savepath-img data/image2concat
 
-# (1c) 在 Agent-Driver 感知结果上执行规划出的工具
+# (1d) 在对应的 Agent-Driver pickle 上执行工具
 python scripts/tools/gen_tool_result_data.py \
     --input final_cot_train_gpt-4o-mini.json \
-    --output data/tool_results/cot_val_Qwen2.5-VL.json \
-    --tool-data-path data/tool_results --split val
+    --output data/tool_results/cot_train_Qwen2.5-VL.json \
+    --tool-data-path data/tool_results --pickle-split train
 
-# (1d) 转成评测用 JSONL
+python scripts/tools/gen_tool_result_data.py \
+    --input final_cot_test_gpt-4o-mini.json \
+    --output data/tool_results/cot_val_Qwen2.5-VL.json \
+    --tool-data-path data/tool_results --pickle-split val
+
+# (1e) 把评测语料转成推理用 JSONL
 python evaluation/prepare_data.py \
     --input data/tool_results/cot_val_Qwen2.5-VL.json \
     --output data/DriveLMMo1_TEST_tool_results.jsonl
+
+# 基线推理用的纯测试集（不含工具字段）
+python evaluation/prepare_data.py \
+    --input data/DriveLMMo1/DriveLMMo1_TEST.json \
+    --output data/DriveLMMo1_TEST.jsonl
 ```
 
-> JSONL 里的 `tool_result` **不是模型输出**，而是第 (1c) 步执行驾驶工具得到的观测；
+> JSONL 里的 `tool_result` **不是模型输出**，而是第 (1d) 步执行驾驶工具得到的观测；
 > `system_prompts` 是自车状态描述。详见
 > [docs/pipeline.md](docs/pipeline.md#1c-execute-the-planned-tools)。
 
@@ -233,15 +251,15 @@ export PYTHONPATH=$PWD
 
 # 构建带工具的 SFT/GRPO 数据
 python scripts/tools/build_sft_data.py \
-    --input data/tool_results/cot_val_Qwen2.5-VL.json \
+    --input data/tool_results/cot_train_Qwen2.5-VL.json \
     --output data/agentthink_sft_phase1.jsonl \
     --format agentthink --target sft --no-observations
 python scripts/tools/build_sft_data.py \
-    --input data/tool_results/cot_val_Qwen2.5-VL.json \
+    --input data/tool_results/cot_train_Qwen2.5-VL.json \
     --output data/agentthink_sft_phase2.jsonl \
     --format agentthink --target sft
 python scripts/tools/build_sft_data.py \
-    --input data/tool_results/cot_val_Qwen2.5-VL.json \
+    --input data/tool_results/cot_train_Qwen2.5-VL.json \
     --output data/agentthink_grpo.jsonl \
     --format agentthink --target grpo
 

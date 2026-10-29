@@ -9,6 +9,7 @@ perception pickle is available.  The driving-centric tools live in
 
 from __future__ import annotations
 
+from pathlib import Path
 from typing import List
 
 from PIL import Image, ImageEnhance
@@ -40,8 +41,18 @@ class FuncAgent:
         if self.json_data_dict is None:
             raise ValueError("json_data_dict with camera paths is required")
 
-        camera_paths = self.json_data_dict["image"]
-        matches = [path for path in camera_paths if path.split("/")[1] == cam_type]
+        camera_paths = [path.replace("\\", "/") for path in self.json_data_dict["image"]]
+        matches = [
+            path
+            for path in camera_paths
+            if len(path.split("/")) >= 2 and path.split("/")[-2] == cam_type
+        ]
+        if not matches:
+            matches = [
+                path
+                for path in camera_paths
+                if f"_{cam_type}_" in f"_{Path(path).stem}_"
+            ]
         if not matches:
             raise ValueError(f"Camera {cam_type!r} not found in json_data_dict")
         return get_2dbox_open_vocabulary_detector(

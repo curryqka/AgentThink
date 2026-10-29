@@ -12,6 +12,10 @@
 set -euo pipefail
 
 PHASE="${1:-phase1}"
+if [[ "${PHASE}" != "phase1" && "${PHASE}" != "phase2" ]]; then
+  echo "usage: $0 {phase1|phase2} [DATA_JSONL] [OUTPUT_DIR]" >&2
+  exit 1
+fi
 DATA="${2:-data/agentthink_sft_phase1.jsonl}"
 OUTPUT="${3:-outputs/agentthink_sft_${PHASE}}"
 MODEL="${MODEL:-Qwen/Qwen2.5-VL-7B-Instruct}"
@@ -40,7 +44,7 @@ swift sft \
   --lora_rank 8 \
   --lora_alpha 32 \
   --dataset "${DATA}" \
-  "${EXTRA_ARGS[@]}" \
+  ${EXTRA_ARGS[@]+"${EXTRA_ARGS[@]}"} \
   --torch_dtype bfloat16 \
   --num_train_epochs 20 \
   --per_device_train_batch_size 2 \

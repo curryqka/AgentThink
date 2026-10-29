@@ -15,11 +15,13 @@ reproduce 71.35 MCQ?") are answered at the end.
                         │
   (1b) six-view collage ────────►  data/image2concat/<scene_frame>.png
                         │
-  (1c) execute tool chains ─────►  cot_val_Qwen2.5-VL.json  (tool_result, system_prompts)
+  (1c) execute tool chains ─┬───►  cot_train_Qwen2.5-VL.json  (train corpus)
+                        │   └───►  cot_val_Qwen2.5-VL.json    (eval corpus)
                         │
   (1d) JSONL conversion ────────►  data/DriveLMMo1_TEST_tool_results.jsonl
                         │
-  (1e) SFT/GRPO builder ────────►  data/agentthink_{sft_phase1,sft_phase2,grpo}.jsonl
+  (1e) SFT/GRPO builder (train corpus)
+                        └───────►  data/agentthink_{sft_phase1,sft_phase2,grpo}.jsonl
                         │
                         ▼
   (2) SFT → GRPO (training/)  ──►  LoRA adapter ──► merged checkpoint
@@ -33,14 +35,34 @@ reproduce 71.35 MCQ?") are answered at the end.
 
 ## 1. Data generation (paper Sec. 3.1)
 
+Two corpora are built with the same tools but different QA splits. Note that the
+Agent-Driver pickle folder is **`train` for DriveLMM-o1 TRAIN** and **`val` for
+DriveLMM-o1 TEST**:
+
+| Corpus | QA json | generation `--split` | execution `--pickle-split` | tool-result artifact |
+|---|---|---|---|---|
+| Training | `DriveLMMo1_TRAIN.json` | `train` | `train` | `data/tool_results/cot_train_Qwen2.5-VL.json` |
+| Evaluation | `DriveLMMo1_TEST.json` | `test` | `val` | `data/tool_results/cot_val_Qwen2.5-VL.json` |
+
+Do **not** build SFT/GRPO data from `cot_val_*.json`: that is the evaluation
+corpus and would leak the test questions into training.
+
 ### 1a. Generate structured Tool-CoT with GPT-4o
 
 ```bash
 export OPENAI_API_KEY=...
+
+# Training corpus (reference answers live in DriveLMMo1_TRAIN.json)
 python scripts/tools/agentthink_data_generater_pipeline.py \
     --input data/DriveLMMo1/DriveLMMo1_TRAIN.json \
     --split train --model-name gpt-4o-mini \
     --output final_cot_train_gpt-4o-mini.json
+
+# Evaluation corpus (questions + reference steps live in DriveLMMo1_TEST.json)
+python scripts/tools/agentthink_data_generater_pipeline.py \
+    --input data/DriveLMMo1/DriveLMMo1_TEST.json \
+    --split test --model-name gpt-4o-mini \
+    --output final_cot_test_gpt-4o-mini.json
 ```
 
 Produces, per sample, a `cot_data` object with `Chain[i] = {Tool, Sub,
@@ -56,16 +78,24 @@ python scripts/tools/data_image_converter.py \
     --savepath-img data/image2concat
 ```
 
-The output filename is `<idx without the question suffix>.png`, e.g.
-`e7ef...b10f....png`. Both training and evaluation resolve images this way.
+Run it once for `DriveLMMo1_TRAIN.json` and once for `DriveLMMo1_TEST.json` (or
+point both at the same output directory). The output filename is `<idx without
+the question suffix>.png`. Both training and evaluation resolve images this way.
 
 ### 1c. Execute the planned tools
 
 ```bash
+# Training: TRAIN questions + train pickles
 python scripts/tools/gen_tool_result_data.py \
     --input final_cot_train_gpt-4o-mini.json \
+    --output data/tool_results/cot_train_Qwen2.5-VL.json \
+    --tool-data-path data/tool_results --pickle-split train
+
+# Evaluation: TEST questions + val pickles
+python scripts/tools/gen_tool_result_data.py \
+    --input final_cot_test_gpt-4o-mini.json \
     --output data/tool_results/cot_val_Qwen2.5-VL.json \
-    --tool-data-path data/tool_results --split val
+    --tool-data-path data/tool_results --pickle-split val
 ```
 
 > **This is the step that produces `tool_result`.** Tool observations are *not*
@@ -75,7 +105,7 @@ python scripts/tools/gen_tool_result_data.py \
 > the ego-state description. If the pickles are missing for a frame, the sample
 > is skipped.
 
-### 1d. Convert to the evaluation JSONL
+### 1d. Convert the evaluation corpus to JSONL
 
 ```bash
 python evaluation/prepare_data.py \
@@ -84,11 +114,16 @@ python evaluation/prepare_data.py \
 ```
 
 Fields: `id`, `image`, `conversations` (question / final answer / reference
-steps), `tool_result`, `system_prompts`. The plain test set
-`DriveLMMo1_TEST.jsonl` (no tool fields) is built by the same script from the
-raw `DriveLMMo1_TEST.json` or shipped with the release.
+steps), `tool_result`, `system_prompts`. The plain test set used by the baseline
+can be built from the raw JSON with the same script:
 
-### 1e. Build SFT / GRPO data
+```bash
+python evaluation/prepare_data.py \
+    --input data/DriveLMMo1/DriveLMMo1_TEST.json \
+    --output data/DriveLMMo1_TEST.jsonl
+```
+
+### 1e. Build SFT / GRPO data from the training corpus
 
 See [training/README.md](../training/README.md#3-build-the-training-data).
 

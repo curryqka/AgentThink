@@ -12,6 +12,8 @@ The five groups (visual, detection, prediction, occupancy, map) follow
 Appendix A of the AgentThink paper.
 """
 
+from pathlib import Path
+
 import matplotlib.pyplot as plt
 import numpy as np
 from PIL import Image, ImageEnhance
@@ -29,6 +31,33 @@ from scripts.tools.tool_prompts import get_ego_prompts
 from skimage.draw import polygon
 from third_party.depth_demo import get_3d_location
 from third_party.yoloworld_demo import get_2dbox_open_vocabulary_detector
+
+
+def select_camera_path(camera_paths, cam_type):
+    """Return the path of ``cam_type`` from a six-camera list.
+
+    nuScenes stores the camera in the parent directory
+    (``samples/CAM_FRONT/...``); the demo data uses a filename token
+    (``nuscenes_CAM_FRONT_3896.webp``).  Exact directory matching is preferred
+    so that ``CAM_FRONT`` never resolves to ``CAM_FRONT_LEFT``.
+    """
+    normalized = [path.replace("\\", "/") for path in camera_paths]
+    matches = []
+    for path in normalized:
+        parts = path.split("/")
+        if len(parts) >= 2 and parts[-2] == cam_type:
+            matches.append(path)
+    if not matches:
+        matches = [
+            path
+            for path in normalized
+            if f"_{cam_type}_" in f"_{Path(path).stem}_"
+        ]
+    if not matches:
+        raise ValueError(
+            f"Camera {cam_type!r} not found in any of: {camera_paths}"
+        )
+    return matches[0]
 
 
 class FuncAgent:
@@ -92,15 +121,7 @@ class FuncAgent:
                 "get_open_world_vocabulary_detection."
             )
         cam_path_info_list = self.json_data_dict["image"]
-        matches = [
-            path for path in cam_path_info_list if path.split("/")[1] == cam_type
-        ]
-        if not matches:
-            raise ValueError(
-                f"Camera {cam_type!r} not found; available cameras: "
-                f"{[path.split('/')[1] for path in cam_path_info_list]}"
-            )
-        choosed_image_path = matches[0]
+        choosed_image_path = select_camera_path(cam_path_info_list, cam_type)
 
         prompts, detected_2d_boxs = get_2dbox_open_vocabulary_detector(text=object_names, image_path=choosed_image_path)
 

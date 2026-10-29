@@ -74,6 +74,7 @@ def main() -> None:
             data_path=args.tool_data_path,
             model_name="Qwen2.5-VL",
             verbose=args.verbose,
+            json_data_dict={"image": sample.get("image", [])},
         )
         tool_prompt = build_tool_prompt(
             agent.func_agent, sample.get("tool_result"), verbose=args.verbose

@@ -186,8 +186,9 @@ def score_sample(
     client,
     args: argparse.Namespace,
 ) -> Optional[dict]:
-    idx = str(item.get("id", item.get("idx", "")))
-    if idx not in ground_truth:
+    idx = item.get("id") or item.get("idx") or ""
+    idx = str(idx)
+    if not idx or idx not in ground_truth:
         return None
 
     reference = ground_truth[idx]
@@ -209,8 +210,9 @@ def score_sample(
     mcq = -1
     if question_type(idx) in args.mcq_types:
         gt_label = extract_options(gt_final)[0][0]
-        pred_label = extract_options(extract_final_answer(response))[0][0]
-        mcq = int(pred_label == gt_label)
+        if gt_label != "none":
+            pred_label = extract_options(extract_final_answer(response))[0][0]
+            mcq = int(pred_label == gt_label)
 
     record = {
         "id": idx,
@@ -269,9 +271,11 @@ def summarize(records: List[dict]) -> Dict[str, Any]:
 
 def write_outputs(records: List[dict], summary: Dict[str, Any], output: Path) -> None:
     output.parent.mkdir(parents=True, exist_ok=True)
-    with output.with_suffix(".json").open("w", encoding="utf-8") as handle:
+    json_path = output.parent / f"{output.name}.json"
+    summary_path = output.parent / f"{output.name}.summary.json"
+    with json_path.open("w", encoding="utf-8") as handle:
         json.dump(records, handle, indent=4, ensure_ascii=False)
-    with output.with_suffix(".summary.json").open("w", encoding="utf-8") as handle:
+    with summary_path.open("w", encoding="utf-8") as handle:
         json.dump(summary, handle, indent=4, ensure_ascii=False)
 
     # Flatten the tool metrics for the CSV export.
@@ -282,7 +286,8 @@ def write_outputs(records: List[dict], summary: Dict[str, Any], output: Path) ->
         rows.append(row)
     if rows:
         fieldnames = list(dict.fromkeys(key for row in rows for key in row))
-        with output.with_suffix(".csv").open("w", encoding="utf-8", newline="") as handle:
+        csv_path = output.parent / f"{output.name}.csv"
+        with csv_path.open("w", encoding="utf-8", newline="") as handle:
             writer = csv.DictWriter(handle, fieldnames=fieldnames)
             writer.writeheader()
             writer.writerows(rows)
@@ -343,7 +348,11 @@ def main() -> None:
     if args.limit:
         predictions = predictions[: args.limit]
 
-    valid = [item for item in predictions if str(item.get("id", item.get("idx"))) in ground_truth]
+    valid = [
+        item
+        for item in predictions
+        if str(item.get("id") or item.get("idx") or "") in ground_truth
+    ]
     skipped = len(predictions) - len(valid)
     if skipped:
         print(f"Skipping {skipped} predictions without a ground-truth match.")

@@ -1,6 +1,7 @@
 # Ultralytics 🚀 AGPL-3.0 License - https://ultralytics.com/license
 
 import contextlib
+import os
 import pickle
 import re
 import types
@@ -722,13 +723,11 @@ class WorldModel(DetectionModel):
         #     self.clip_model = clip.load("ViT-B/32")[0]
         # model = self.clip_model if cache_clip_model else clip.load("ViT-B/32")[0]
         
-        # 指定本地模型路径
-        model_path = '/high_perf_store/mlinfra-vepfs/qiankangan/Drive-MLLM-main/third_party/ckpt/ViT-B-32.pt'  # 根据实际路径修改
-        
+        # CLIP weights are downloaded to (or loaded from) this directory.
+        clip_model_dir = os.getenv("CLIP_MODEL_DIR", "./pretrained_model")
+
         if not getattr(self, "clip_model", None) and cache_clip_model:
-            # 从本地加载模型
-            # breakpoint()
-            self.clip_model = clip.load("ViT-B/32", download_root=model_path.rsplit('/', 1)[0])[0]
+            self.clip_model = clip.load("ViT-B/32", download_root=clip_model_dir)[0]
             
         # 创建临时加载函数
         def load_local_clip():

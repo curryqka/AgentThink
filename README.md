@@ -118,20 +118,18 @@ pip install -r requirements.txt
 bash scripts/env.sh
 
 # optional: Qwen2.5-VL demo dependencies
-export QWEN2_5_VL_DIR=/path/to/Qwen2.5-VL
 bash scripts/env_drivemllm.sh
 
 # make the repository importable
 export PYTHONPATH="$PWD:$PYTHONPATH"
 ```
 
-The third-party tool implementations are cloned separately:
+The depth and detection tool implementations are already vendored in
+`third_party/DAM` and `third_party/yoloworld`, so no extra clone is required.
+ms-swift is installed by `scripts/env.sh`; a source checkout is optional:
 
 ```bash
-cd third_party
-git clone https://github.com/DepthAnything/Depth-Anything-V2.git
-git clone https://github.com/AILab-CVC/YOLO-World.git
-git clone https://github.com/modelscope/ms-swift.git ms-swift-main
+git clone https://github.com/modelscope/ms-swift.git third_party/ms-swift-main
 ```
 
 Download `depth_anything_v2_vitb.pth` and `yolov8x-worldv2.pt` into
@@ -180,13 +178,11 @@ AgentThink/
 ## 🚀 Pipeline at a glance
 
 ```text
-DriveLMM-o1 QA + nuScenes images + Agent-Driver pickles
-        │
-        ├─(1a) GPT-4o Tool-CoT generation ──► final_cot_train_<model>.json
-        ├─(1b) six-view collage ────────────► data/image2concat/*.png
-        ├─(1c) execute planned tools ───────► cot_val_Qwen2.5-VL.json
-        ├─(1d) JSONL conversion ────────────► DriveLMMo1_TEST_tool_results.jsonl
-        └─(1e) build SFT/GRPO data ─────────► data/agentthink_*.jsonl
+Train corpus:  TRAIN QA + train pickles ──► final_cot_train ──► cot_train_Qwen2.5-VL
+                                                              └─► SFT / GRPO data
+Eval corpus:   TEST  QA + val   pickles ──► final_cot_test  ──► cot_val_Qwen2.5-VL
+                                                              └─► TEST tool-results JSONL
+Both corpora also need six-view collages in data/image2concat/.
         │
         ├─(2) SFT phase 1 → SFT phase 2 → GRPO ──► merged checkpoint
         ├─(3) inference (plain / planner / AgentThink)
@@ -198,35 +194,58 @@ A detailed artifact table, reproduction checklist and FAQ live in
 
 ## 1. Tool-CoT data generation
 
+The QA split and the Agent-Driver pickle folder are **not** the same thing:
+
+| Corpus | QA json | generation `--split` | execution `--pickle-split` | tool-result file |
+|---|---|---|---|---|
+| Training | `DriveLMMo1_TRAIN.json` | `train` | `train` | `data/tool_results/cot_train_Qwen2.5-VL.json` |
+| Evaluation | `DriveLMMo1_TEST.json` | `test` | `val` | `data/tool_results/cot_val_Qwen2.5-VL.json` |
+
 ```bash
 export OPENAI_API_KEY=...            # optionally OPENAI_BASE_URL=...
 
-# (1a) Generate structured Tool-CoT from the reference answers
+# (1a) Training corpus: generate Tool-CoT from the TRAIN reference answers
 python scripts/tools/agentthink_data_generater_pipeline.py \
     --input data/DriveLMMo1/DriveLMMo1_TRAIN.json \
     --split train --model-name gpt-4o-mini \
     --output final_cot_train_gpt-4o-mini.json
 
-# (1b) Stitch six cameras into one image per sample
+# (1b) Evaluation corpus: generate Tool-CoT from the TEST questions
+python scripts/tools/agentthink_data_generater_pipeline.py \
+    --input data/DriveLMMo1/DriveLMMo1_TEST.json \
+    --split test --model-name gpt-4o-mini \
+    --output final_cot_test_gpt-4o-mini.json
+
+# (1c) Stitch six cameras into one image per sample (run for TRAIN and TEST)
 python scripts/tools/data_image_converter.py \
     --json-file-path data/DriveLMMo1/DriveLMMo1_TEST.json \
     --image-root-dir /path/to/nuscenes \
     --savepath-img data/image2concat
 
-# (1c) Execute the planned tools on the Agent-Driver perception pickles
+# (1d) Execute the planned tools on the matching Agent-Driver pickles
 python scripts/tools/gen_tool_result_data.py \
     --input final_cot_train_gpt-4o-mini.json \
-    --output data/tool_results/cot_val_Qwen2.5-VL.json \
-    --tool-data-path data/tool_results --split val
+    --output data/tool_results/cot_train_Qwen2.5-VL.json \
+    --tool-data-path data/tool_results --pickle-split train
 
-# (1d) Convert to the evaluation JSONL
+python scripts/tools/gen_tool_result_data.py \
+    --input final_cot_test_gpt-4o-mini.json \
+    --output data/tool_results/cot_val_Qwen2.5-VL.json \
+    --tool-data-path data/tool_results --pickle-split val
+
+# (1e) Convert the evaluation corpus to the inference JSONL
 python evaluation/prepare_data.py \
     --input data/tool_results/cot_val_Qwen2.5-VL.json \
     --output data/DriveLMMo1_TEST_tool_results.jsonl
+
+# plain test set for the baseline (no tool fields)
+python evaluation/prepare_data.py \
+    --input data/DriveLMMo1/DriveLMMo1_TEST.json \
+    --output data/DriveLMMo1_TEST.jsonl
 ```
 
 > `tool_result` in the JSONL is **not** model output. It is the output of the
-> driving tools executed in step (1c). `system_prompts` contains the ego-state
+> driving tools executed in step (1d). `system_prompts` contains the ego-state
 > description. See [docs/pipeline.md](docs/pipeline.md#1c-execute-the-planned-tools).
 
 ## 2. Two-stage training (SFT → GRPO)
@@ -239,15 +258,15 @@ export PYTHONPATH=$PWD
 
 # Build tool-aware training data
 python scripts/tools/build_sft_data.py \
-    --input data/tool_results/cot_val_Qwen2.5-VL.json \
+    --input data/tool_results/cot_train_Qwen2.5-VL.json \
     --output data/agentthink_sft_phase1.jsonl \
     --format agentthink --target sft --no-observations
 python scripts/tools/build_sft_data.py \
-    --input data/tool_results/cot_val_Qwen2.5-VL.json \
+    --input data/tool_results/cot_train_Qwen2.5-VL.json \
     --output data/agentthink_sft_phase2.jsonl \
     --format agentthink --target sft
 python scripts/tools/build_sft_data.py \
-    --input data/tool_results/cot_val_Qwen2.5-VL.json \
+    --input data/tool_results/cot_train_Qwen2.5-VL.json \
     --output data/agentthink_grpo.jsonl \
     --format agentthink --target grpo
 

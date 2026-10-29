@@ -24,6 +24,7 @@ Example:
 from __future__ import annotations
 
 import argparse
+import ast
 import inspect
 import json
 import pickle
@@ -33,7 +34,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from tqdm import tqdm
 
-REPO_ROOT = Path(__file__).resolve().parents[1]
+REPO_ROOT = Path(__file__).resolve().parents[2]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
@@ -63,6 +64,7 @@ class AgentThink:
         data_path: str = "data/tool_results",
         model_name: str = "Qwen2.5-VL",
         verbose: bool = False,
+        json_data_dict: Optional[Dict[str, Any]] = None,
     ) -> None:
         self.token = token
         self.split = split
@@ -75,7 +77,9 @@ class AgentThink:
         with self.file_name.open("rb") as handle:
             self.data_dict = pickle.load(handle)
 
-        self.func_agent = FuncAgent(self.data_dict)
+        # ``json_data_dict`` carries the six camera paths used by the
+        # open-vocabulary / depth visual tools.
+        self.func_agent = FuncAgent(self.data_dict, json_data_dict)
 
         # Safety limits on repeated tool categories (Sec. 3.1 of the paper).
         self.max_calls = {
@@ -89,6 +93,11 @@ class AgentThink:
     @staticmethod
     def _coerce_argument(value: Any, name: str) -> Any:
         """Convert the loose JSON values produced by an LLM to Python types."""
+        if isinstance(value, str) and value.strip().startswith(("[", "(")):
+            try:
+                value = ast.literal_eval(value)
+            except (ValueError, SyntaxError):
+                pass
         if name in ("locations", "location"):
             if isinstance(value, (list, tuple)):
                 if value and isinstance(value[0], (list, tuple)):
@@ -111,6 +120,8 @@ class AgentThink:
         Parameters with defaults (e.g. ``return_score``) are optional, so a
         shorter list from the planner is still valid.
         """
+        if not isinstance(parameters, (list, tuple)):
+            parameters = [parameters]
         signature_params = [
             parameter
             for parameter in inspect.signature(method).parameters.values()
@@ -168,7 +179,16 @@ class AgentThink:
                 print(f"Unknown tool: {tool_name}")
             return None
 
-        kwargs = self._build_kwargs(method, parameters)
+        if isinstance(parameters, dict):
+            # Some planners emit named parameters instead of a positional list.
+            accepted = set(inspect.signature(method).parameters)
+            kwargs = {
+                key: self._coerce_argument(value, key)
+                for key, value in parameters.items()
+                if key in accepted
+            }
+        else:
+            kwargs = self._build_kwargs(method, parameters)
         if kwargs is None:
             return None
 
@@ -242,7 +262,15 @@ def main() -> None:
         default="data/tool_results",
         help="Directory containing Agent-Driver val/ and train/ pickles.",
     )
-    parser.add_argument("--split", default="val", choices=["val", "train"])
+    parser.add_argument(
+        "--pickle-split",
+        "--split",
+        dest="split",
+        default="val",
+        choices=["val", "train"],
+        help="Agent-Driver pickle folder: 'train' for DriveLMM-o1 TRAIN, "
+        "'val' for DriveLMM-o1 TEST (default: val).",
+    )
     parser.add_argument("--model-name", default="Qwen2.5-VL")
     parser.add_argument("--limit", type=int, default=None)
     parser.add_argument("--verbose", action="store_true")
@@ -268,12 +296,14 @@ def main() -> None:
         frame_token = parts[1]
 
         try:
+            image_paths = sample.get("image") or []
             agent = AgentThink(
                 token=frame_token,
                 split=args.split,
                 data_path=args.tool_data_path,
                 model_name=args.model_name,
                 verbose=args.verbose,
+                json_data_dict={"image": image_paths} if image_paths else None,
             )
         except FileNotFoundError:
             skipped += 1

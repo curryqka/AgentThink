@@ -85,27 +85,31 @@ NPROC_PER_NODE=4 bash training/sft.sh phase1
 
 ## 3. Build the training data
 
-The following assumes `data/tool_results/cot_val_Qwen2.5-VL.json` was produced by
-the data-generation pipeline (`scripts/tools/agentthink_data_generater_pipeline.py`
-→ `scripts/tools/gen_tool_result_data.py`). The same file also builds the
-evaluation JSONL (see `docs/pipeline.md`).
+The following assumes `data/tool_results/cot_train_Qwen2.5-VL.json` was produced
+from **DriveLMM-o1 TRAIN** by the data-generation pipeline
+(`scripts/tools/agentthink_data_generater_pipeline.py` with `--split train`, then
+`scripts/tools/gen_tool_result_data.py` with `--pickle-split train`).
+
+> Do **not** use `cot_val_Qwen2.5-VL.json` here. That file is built from the
+> DriveLMM-o1 TEST questions and is only for evaluation; training on it would
+> leak the test set.
 
 ```bash
 # SFT phase 1: actions only, tool observations masked
 python scripts/tools/build_sft_data.py \
-    --input data/tool_results/cot_val_Qwen2.5-VL.json \
+    --input data/tool_results/cot_train_Qwen2.5-VL.json \
     --output data/agentthink_sft_phase1.jsonl \
     --format agentthink --target sft --no-observations
 
 # SFT phase 2: reasoning + tool observations
 python scripts/tools/build_sft_data.py \
-    --input data/tool_results/cot_val_Qwen2.5-VL.json \
+    --input data/tool_results/cot_train_Qwen2.5-VL.json \
     --output data/agentthink_sft_phase2.jsonl \
     --format agentthink --target sft
 
 # GRPO prompts: no assistant turn, reference answer and key steps as columns
 python scripts/tools/build_sft_data.py \
-    --input data/tool_results/cot_val_Qwen2.5-VL.json \
+    --input data/tool_results/cot_train_Qwen2.5-VL.json \
     --output data/agentthink_grpo.jsonl \
     --format agentthink --target grpo
 ```
@@ -117,7 +121,8 @@ If you only want to warm up on the released reference CoT (no tool traces), use
 
 ```bash
 export PYTHONPATH=$PWD
-export VAL_DATASET=data/agentthink_val.jsonl   # optional
+# optional: point to your own held-out JSONL to enable eval_steps
+# export VAL_DATASET=data/agentthink_val.jsonl
 
 # Phase 1
 bash training/sft.sh phase1 data/agentthink_sft_phase1.jsonl outputs/sft_phase1

@@ -108,7 +108,10 @@ class DriveLMMo1Dataset(torch.utils.data.Dataset):
         question = data["conversations"][0]["value"].strip()
         answer = data["conversations"][1]["value"].strip()
 
-        image_file = self.image_root / data["image"]
+        image_name = data["image"]
+        if isinstance(image_name, (list, tuple)):
+            image_name = image_name[0]
+        image_file = self.image_root / image_name
         if not image_file.exists():
             raise FileNotFoundError(
                 f"Image not found: {image_file}. "

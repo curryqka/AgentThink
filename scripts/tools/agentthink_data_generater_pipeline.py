@@ -32,7 +32,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from tqdm import tqdm
 
-REPO_ROOT = Path(__file__).resolve().parents[1]
+REPO_ROOT = Path(__file__).resolve().parents[2]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
@@ -243,10 +243,10 @@ STOP_MARKERS = (
     "The final answer is:",
     "**Final Answer:**",
     "**Final Answer**:",
+    "**Final Answer**",
     "Final Answer",
     "Answer",
     "Why take this action?:",
-    "**Final Answer**",
     "**Final Decision**:",
     "Final Step:",
     "<CONCLUSION>",
@@ -343,6 +343,9 @@ def run_pipeline(args: argparse.Namespace) -> None:
         samples = samples[: args.limit]
 
     start_index = load_progress(progress_path)
+    if start_index and not output_path.exists():
+        LOGGER.warning("Progress file exists but %s is missing; restarting", output_path)
+        start_index = 0
     if start_index:
         LOGGER.info("Resuming from sample %d", start_index)
 
@@ -382,7 +385,9 @@ def run_pipeline(args: argparse.Namespace) -> None:
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Generate Tool-CoT training data")
-    parser.add_argument("--input", default="data/DriveLMMo1_TRAIN.json")
+    parser.add_argument(
+        "--input", default="data/DriveLMMo1/DriveLMMo1_TRAIN.json"
+    )
     parser.add_argument("--output", default=None)
     parser.add_argument("--progress-file", default=None)
     parser.add_argument("--split", choices=["train", "test"], default="train")
