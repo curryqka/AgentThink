@@ -261,7 +261,8 @@ python scripts/tools/build_sft_data.py \
 python scripts/tools/build_sft_data.py \
     --input data/tool_results/cot_train_Qwen2.5-VL.json \
     --output data/agentthink_grpo.jsonl \
-    --format agentthink --target grpo
+    --format agentthink --target grpo \
+    --pickle-split train --tool-data-path data/tool_results
 
 # 训练
 NPROC_PER_NODE=8 bash training/sft.sh phase1 data/agentthink_sft_phase1.jsonl
