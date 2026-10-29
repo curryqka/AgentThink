@@ -1,0 +1,42 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.venv/
+venv/
+
+# Caches / tooling
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Model weights and large artifacts
+pretrained_model/
+*.pt
+*.pth
+*.safetensors
+*.ckpt
+*.bin
+
+# Data and generated outputs
+data/
+outputs/
+results/*.json
+results/*.csv
+results/agentthink/*.json
+!results/agentthink/.gitkeep
+progress*.json
+final_cot_*.json
+cot_*.json
+*.log
+
+# Local environment / editor
+.env
+.DS_Store
+.idea/
+.vscode/

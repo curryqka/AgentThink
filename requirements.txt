@@ -1,9 +1,32 @@
-timm
-deepspeed
-openai-clip
-ultralytics
+# Core inference / training stack (versions follow the paper's environment)
 torch==2.6.0
 torchvision==0.21.0
 torchaudio==2.6.0
 transformers==4.50.1
+accelerate
+timm
+deepspeed
+
+# Data generation (GPT-4o Tool-CoT pipeline)
+openai>=1.40
+
+# Tool library / geometry
 shapely
+numpy
+Pillow
+opencv-python
+scikit-image
+matplotlib
+
+# Evaluation / progress reporting
+tqdm
+
+# Vision tools (open-vocabulary detection + monocular depth)
+openai-clip
+ultralytics
+qwen-vl-utils[decord]
+
+# ms-swift is installed separately:
+#   bash scripts/env.sh
+# FlashAttention is optional but recommended for Inference/:
+#   pip install flash-attn --no-build-isolation

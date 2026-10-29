@@ -141,8 +141,8 @@ def get_2dloc_open_vocabulary_detector(
 
 if __name__ == '__main__':
     # Example usage
-    image_path = "./third_party/nuscenes_CAM_FRONT_5976.webp"
-    model_path = ".//yolov8x-worldv2.pt"
+    image_path = "./third_party/nuscenes_CAM_FRONT_5978.webp"
+    model_path = "./pretrained_model/yolov8x-worldv2.pt"
     objects_to_detect = ["black motorcycle", 'silver car']
     
     # Detect bounding boxes

@@ -1,7 +1,7 @@
 # Utils for detection functions
 # Written by Junjie Ye
 
-from shapely.geometry import Polygon, LineString
+from shapely.geometry import Polygon
 import numpy as np
 
 def polygons_overlap(poly1, poly2):

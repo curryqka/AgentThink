@@ -1,25 +1,13 @@
+#!/usr/bin/env bash
+# Extra dependencies used by the Qwen2.5-VL demo path.
+#
+# The demo loads Qwen2.5-VL through transformers, so no Qwen repository checkout
+# is required. Set PYTHONPATH to the repository root before running the scripts:
+#   export PYTHONPATH="$PWD:$PYTHONPATH"
+set -euo pipefail
 
-cd path/to/Drive-MLLM-main
-pip install -r requirements.txt
+pip install 'qwen-vl-utils[decord]'
 
-# setup PYTHONPATH
-echo 'export PYTHONPATH=$(pwd):$PYTHONPATH' >> ~/.bashrc
-source ~/.bashrc
-
-# qwen-VL
-cd /path/to/Qwen2.5-VL-main/
-pip install -r requirements_web_demo.txt
-pip install qwen-vl-utils[decord]
-cd ../..
-
-# setup PYTHONPATH
-echo 'export PYTHONPATH=$(pwd):$PYTHONPATH' >> ~/.bashrc
-source ~/.bashrc
-
-
-cd path/to/Drive-MLLM-main
-# bash third_party/env_yoloworld.sh
-## flash atten (optional)
-pip install flash-attn --no-build-isolation --no-cache-dir
-# download whl and install
-
+# FlashAttention is optional but strongly recommended (used by Inference/).
+pip install flash-attn --no-build-isolation --no-cache-dir || \
+  echo "flash-attn install failed; install a matching wheel manually." >&2
