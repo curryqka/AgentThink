@@ -114,7 +114,7 @@ conda activate agentthink
 pip install -r requirements.txt
 
 # ms-swift (inference + training engine)
-# Requires 3.x: ms-swift 4.0 removed `swift.llm`, which inference/ imports.
+# Pins 3.11.3: 4.0 removed `swift.llm`; 3.12 requires newer transformers/trl.
 bash scripts/env.sh
 
 # optional: Qwen2.5-VL demo dependencies

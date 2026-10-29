@@ -21,6 +21,8 @@ OUTPUT="${3:-outputs/agentthink_sft_${PHASE}}"
 MODEL="${MODEL:-Qwen/Qwen2.5-VL-7B-Instruct}"
 NPROC="${NPROC_PER_NODE:-8}"
 ADAPTERS="${ADAPTERS:-}"
+MAX_LENGTH="${MAX_LENGTH:-4096}"
+DEEPSPEED="${DEEPSPEED-zero2}"   # set DEEPSPEED="" to disable DeepSpeed
 
 if [[ "${PHASE}" == "phase2" && "${DATA}" == "data/agentthink_sft_phase1.jsonl" ]]; then
   DATA="data/agentthink_sft_phase2.jsonl"
@@ -34,8 +36,14 @@ EXTRA_ARGS=()
 if [[ -n "${ADAPTERS}" ]]; then
   EXTRA_ARGS+=(--adapters "${ADAPTERS}")
 fi
+if [[ -n "${MAX_STEPS:-}" ]]; then
+  EXTRA_ARGS+=(--max_steps "${MAX_STEPS}")
+fi
 if [[ -n "${VAL_DATASET:-}" ]]; then
   EXTRA_ARGS+=(--val_dataset "${VAL_DATASET}" --eval_steps 1000 --per_device_eval_batch_size 2)
+fi
+if [[ -n "${DEEPSPEED}" ]]; then
+  EXTRA_ARGS+=(--deepspeed "${DEEPSPEED}")
 fi
 
 swift sft \
@@ -51,7 +59,7 @@ swift sft \
   --gradient_accumulation_steps 16 \
   --learning_rate 1e-4 \
   --freeze_vit true \
-  --max_length 4096 \
+  --max_length "${MAX_LENGTH}" \
   --save_steps 1000 \
   --save_total_limit 5 \
   --logging_steps 5 \
@@ -60,5 +68,4 @@ swift sft \
   --dataset_num_proc 4 \
   --gradient_checkpointing true \
   --gradient_checkpointing_kwargs '{"use_reentrant": false}' \
-  --deepspeed zero2 \
   --output_dir "${OUTPUT}"

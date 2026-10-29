@@ -81,13 +81,9 @@ class AgentThink:
         # open-vocabulary / depth visual tools.
         self.func_agent = FuncAgent(self.data_dict, json_data_dict)
 
-        # Safety limits on repeated tool categories (Sec. 3.1 of the paper).
-        self.max_calls = {
-            "detection": 3,
-            "prediction": 1,
-            "occupancy": 1,
-            "map": 1,
-        }
+        # Safety limit used by the original Agent-Driver pipeline. Other tool
+        # categories are not capped: a chain may call several prediction tools.
+        self.max_calls = {"detection": 3}
 
     # -- argument handling ---------------------------------------------------
     @staticmethod
@@ -238,7 +234,7 @@ class AgentThink:
             tool = node.get("Tool") if isinstance(node, dict) else None
             tool_name = (tool or {}).get("function_name", "")
             category = self.category_for(tool_name)
-            if category:
+            if category in self.max_calls:
                 call_counts[category] += 1
                 if call_counts[category] > self.max_calls[category]:
                     tool_responses.append(None)

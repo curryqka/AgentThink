@@ -109,7 +109,7 @@ conda activate agentthink
 pip install -r requirements.txt
 
 # ms-swift（推理与训练引擎）
-# 必须使用 3.x：4.0 移除了 inference/ 依赖的 `swift.llm`
+# 固定 3.11.3：4.0 移除了 `swift.llm`；3.12 需要更新的 transformers/trl
 bash scripts/env.sh
 
 # 可选：Qwen2.5-VL demo 依赖

@@ -3,9 +3,11 @@ torch==2.6.0
 torchvision==0.21.0
 torchaudio==2.6.0
 transformers==4.50.1
+trl==0.18.2
 accelerate
 timm
 deepspeed
+msgspec
 
 # Data generation (GPT-4o Tool-CoT pipeline)
 openai>=1.40
@@ -24,7 +26,7 @@ tqdm
 # Vision tools (open-vocabulary detection + monocular depth)
 openai-clip
 ultralytics
-qwen-vl-utils[decord]
+qwen-vl-utils==0.0.14
 
 # ms-swift is installed separately:
 #   bash scripts/env.sh
