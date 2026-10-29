@@ -156,6 +156,17 @@ def parse_text_tool_calls(text: str) -> List[Dict[str, Any]]:
     return calls
 
 
+def is_tool_error(observation: str) -> bool:
+    """Heuristic for failed tool observations used by trajectory metrics."""
+    lowered = (observation or "").lower()
+    if lowered.startswith("tool environment unavailable"):
+        return True
+    return lowered.startswith("tool ") and (
+        "failed or is unavailable" in lowered
+        or "returned no observation" in lowered
+    )
+
+
 def extract_tool_calls(text: str) -> List[Dict[str, Any]]:
     """Extract calls from a structured Tool-CoT JSON or a text trace."""
     chain = parse_tool_chain(text)

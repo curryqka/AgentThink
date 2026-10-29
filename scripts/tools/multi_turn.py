@@ -14,12 +14,10 @@ The dataset must carry the execution metadata produced by
 
 from __future__ import annotations
 
-import json
 import os
 import sys
-from collections import OrderedDict
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any, Dict
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 if str(REPO_ROOT) not in sys.path:
@@ -27,8 +25,8 @@ if str(REPO_ROOT) not in sys.path:
 
 from swift.plugin import MultiTurnScheduler, multi_turns  # noqa: E402
 
-from scripts.tools.gen_tool_result_data import AgentThink  # noqa: E402
 from scripts.tools.tool_chain import extract_tool_calls  # noqa: E402
+from scripts.tools.tool_runtime import ToolRuntime  # noqa: E402
 
 
 class AgentThinkToolScheduler(MultiTurnScheduler):
@@ -36,53 +34,7 @@ class AgentThinkToolScheduler(MultiTurnScheduler):
 
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
-        # Agent-Driver pickles are expensive to load; keep a small LRU cache.
-        self._agents: "OrderedDict[tuple, AgentThink]" = OrderedDict()
-        self.max_cached_agents = int(os.getenv("AGENTTHINK_AGENT_CACHE", "64"))
-
-    @staticmethod
-    def _as_list(value: Any) -> List[str]:
-        if isinstance(value, str):
-            try:
-                value = json.loads(value)
-            except json.JSONDecodeError:
-                return [value]
-        return [str(item) for item in value] if isinstance(value, (list, tuple)) else []
-
-    def _get_agent(self, data: Dict[str, Any]):
-        token = str(data.get("frame_token") or "")
-        if not token:
-            return None, "missing frame_token in the dataset row"
-        split = str(data.get("pickle_split") or "train")
-        data_path = str(data.get("tool_data_path") or "data/tool_results")
-        key = (token, split, data_path)
-        if key not in self._agents:
-            camera_paths = self._as_list(data.get("camera_paths"))
-            try:
-                self._agents[key] = AgentThink(
-                    token=token,
-                    split=split,
-                    data_path=data_path,
-                    json_data_dict={"image": camera_paths} if camera_paths else None,
-                )
-            except Exception as exc:  # missing/corrupt pickle
-                return None, f"cannot load {data_path}/{split}/{token}.pkl: {exc}"
-            while len(self._agents) > max(1, self.max_cached_agents):
-                self._agents.popitem(last=False)
-        else:
-            self._agents.move_to_end(key)
-        return self._agents[key], None
-
-    def _execute(self, data: Dict[str, Any], call: Dict[str, Any]) -> str:
-        agent, error = self._get_agent(data)
-        if agent is None:
-            return f"Tool environment unavailable: {error}"
-        response = agent.tool_call({"Tool": call})
-        if response is None:
-            return f"Tool {call['function_name']} failed or is unavailable."
-        return response.get("prompt") or (
-            f"Tool {call['function_name']} returned no observation."
-        )
+        self.runtime = ToolRuntime()
 
     def check_finished(self, infer_request, response_choice, current_turn: int) -> bool:
         completion = response_choice.message.content or ""
@@ -105,7 +57,7 @@ class AgentThinkToolScheduler(MultiTurnScheduler):
         calls = extract_tool_calls(completion)
         data = infer_request.data_dict or {}
 
-        observations = [self._execute(data, call) for call in calls]
+        observations = self.runtime.execute_calls(data, calls)
         observation_text = "\n".join(
             f"Tool Output: {observation}" for observation in observations
         )
