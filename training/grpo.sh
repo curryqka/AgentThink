@@ -19,6 +19,11 @@ DATA="${2:-data/agentthink_grpo.jsonl}"
 OUTPUT="${3:-outputs/agentthink_grpo}"
 NPROC="${NPROC_PER_NODE:-8}"
 ADAPTERS="${ADAPTERS:-}"
+MAX_LENGTH="${MAX_LENGTH:-2048}"
+MAX_COMPLETION_LENGTH="${MAX_COMPLETION_LENGTH:-1024}"
+USE_VLLM="${USE_VLLM:-false}"
+DEEPSPEED="${DEEPSPEED-zero3}"   # set DEEPSPEED="" to disable DeepSpeed
+GRAD_ACCUM="${GRAD_ACCUM:-8}"
 
 if [[ ! -f "${DATA}" ]]; then
   echo "Dataset not found: ${DATA}" >&2
@@ -34,8 +39,14 @@ EXTRA_ARGS=()
 if [[ -n "${ADAPTERS}" ]]; then
   EXTRA_ARGS+=(--adapters "${ADAPTERS}")
 fi
+if [[ -n "${MAX_STEPS:-}" ]]; then
+  EXTRA_ARGS+=(--max_steps "${MAX_STEPS}")
+fi
 if [[ -n "${VAL_DATASET:-}" ]]; then
-  EXTRA_ARGS+=(--val_dataset "${VAL_DATASET}" --eval_steps 500 --per_device_eval_batch_size 1)
+  EXTRA_ARGS+=(--val_dataset "${VAL_DATASET}" --eval_steps 500)
+fi
+if [[ -n "${DEEPSPEED}" ]]; then
+  EXTRA_ARGS+=(--deepspeed "${DEEPSPEED}")
 fi
 
 swift rlhf \
@@ -53,12 +64,14 @@ swift rlhf \
   --freeze_vit true \
   --num_train_epochs 8 \
   --per_device_train_batch_size 1 \
-  --gradient_accumulation_steps 8 \
+  --per_device_eval_batch_size 2 \
+  --gradient_accumulation_steps "${GRAD_ACCUM}" \
   --learning_rate 1e-5 \
   --num_generations 2 \
   --temperature 1.2 \
-  --max_length 2048 \
-  --max_completion_length 1024 \
+  --max_length "${MAX_LENGTH}" \
+  --max_completion_length "${MAX_COMPLETION_LENGTH}" \
+  --use_vllm "${USE_VLLM}" \
   --beta 0.001 \
   --eval_steps 500 \
   --save_steps 100 \
@@ -67,5 +80,4 @@ swift rlhf \
   --warmup_ratio 0.01 \
   --dataloader_num_workers 4 \
   --dataset_num_proc 4 \
-  --deepspeed zero3 \
   --output_dir "${OUTPUT}"

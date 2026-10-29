@@ -15,8 +15,18 @@ reference implementations built on [ms-swift](https://github.com/modelscope/ms-s
 The paper uses **ms-swift 3.x** (`swift.llm`, `swift.plugin.ORM`). ms-swift 4.0
 restructured the package and removed `swift.llm`, which breaks the inference
 scripts in this repository. `scripts/env.sh` therefore installs
-`ms-swift[all]>=3.5,<4.0`; the CLI below was checked against **3.5.0** and
-**3.12.6**.
+`ms-swift==3.11.3`, which was validated end to end (inference, 1-step SFT,
+1-step GRPO) with `transformers==4.50.1`, `trl==0.18.2` and
+`qwen-vl-utils==0.0.14`.
+
+Why exactly 3.11.3:
+
+- **3.12.x** requires `trl>=0.20`, and trl 0.20 requires
+  `transformers>=4.53.2`, which conflicts with the paper's 4.50.1 pin.
+- **3.5.x–3.10.x** call `vision_process.IMAGE_FACTOR`, which does not exist in
+  the current PyPI `qwen-vl-utils==0.0.14`.
+- 3.11.3 skips missing vision attributes, supports `trl<0.20`, and keeps the
+  `swift.llm` API used by `evaluation/`.
 
 | Paper (Appendix B) | ms-swift 3.x flag |
 |---|---|
@@ -146,7 +156,51 @@ GRPO weights can be changed without editing code:
 AGENTTHINK_REWARD_WEIGHTS="0.4,0.3,0.3" bash training/grpo.sh ...
 ```
 
-## 5. Reward functions
+### Single-GPU smoke test
+
+Use `MAX_STEPS=1` to verify the whole launch path without training a full epoch:
+
+```bash
+export PYTHONPATH=$PWD
+export MODEL=/path/to/Qwen2.5-VL-3B-Instruct
+
+MAX_STEPS=1 NPROC_PER_NODE=1 MODEL="$MODEL" \
+  bash training/sft.sh phase2 data/agentthink_sft_phase2.jsonl outputs/smoke_sft
+
+# GRPO needs an effective batch divisible by num_generations (2).
+MAX_STEPS=1 NPROC_PER_NODE=1 GRAD_ACCUM=2 \
+  MAX_LENGTH=4096 MAX_COMPLETION_LENGTH=32 \
+  DEEPSPEED="" USE_VLLM=false \
+  bash training/grpo.sh "$MODEL" data/agentthink_grpo.jsonl outputs/smoke_grpo
+```
+
+Tunable environment variables:
+
+| Variable | Default | Meaning |
+|---|---|---|
+| `MAX_STEPS` | unset | stop after N optimizer steps (smoke tests) |
+| `GRAD_ACCUM` | SFT 16 / GRPO 8 | gradient accumulation; effective batch must be divisible by `num_generations` for GRPO |
+| `MAX_LENGTH` | SFT 4096 / GRPO 2048 | total sequence length |
+| `MAX_COMPLETION_LENGTH` | 1024 | GRPO generated length |
+| `DEEPSPEED` | `zero2` / `zero3` | set empty to disable DeepSpeed |
+| `USE_VLLM` | `false` | set `true` after installing vLLM for faster rollouts |
+
+## 5. Smoke validation
+
+Validated on 2 × RTX 4090 (48 GB, ~6.4 GB used by another job) with
+Qwen2.5-VL-3B-Instruct, ms-swift 3.11.3, transformers 4.50.1, trl 0.18.2:
+
+| Path | Result |
+|---|---|
+| `evaluation/inference.py` (1 sample) | passed |
+| `evaluation/inference_agentthink.py` (1 sample) | passed |
+| `evaluation/inference_withtool.py` (1 sample) | passed, schema validation reported |
+| `training/sft.sh phase2` 1 step | passed, 23.6 GiB, 18 s |
+| `training/grpo.sh` 1 step, no DeepSpeed | passed, 37.2 GiB, 64 s, `AgentThinkReward` active |
+| `training/merge_lora.sh` | passed |
+| 2-GPU GRPO with ZeRO-3 | launch succeeded; step hit OOM on a 48 GB card with a co-tenant process (expected memory pressure, not a script error) |
+
+## 6. Reward functions
 
 `scripts/tools/rewards.py` implements Table 1:
 
@@ -162,7 +216,7 @@ trace rendered by `chain_render.py` (`Step N: ... / Tool: name(...)`).
 
 The reward functions are pure Python and unit-tested in `tests/test_rewards.py`.
 
-## 6. Practical tips
+## 7. Practical tips
 
 - Generation during GRPO is the dominant cost. Lower `--max_completion_length`
   before lowering `--num_generations`; the latter changes the advantage estimate.
