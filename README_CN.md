@@ -42,6 +42,7 @@
 - [亮点](#-亮点)
 - [动态](#-动态)
 - [框架](#-框架)
+- [两版流程](#-两版流程)
 - [环境安装](#-环境安装)
 - [模型与数据](#-模型与数据)
 - [流程总览](#-流程总览)
@@ -85,6 +86,33 @@
 | **1. 数据生成** | GPT-4o 把参考 CoT 改写成结构化 Tool-CoT；在 Agent-Driver 感知结果上执行驾驶工具（[工具清单](docs/tool_library.md)） | `scripts/tools/` |
 | **2. 两阶段训练** | LoRA SFT（阶段一：动作；阶段二：动作 + 观测）后接 GRPO 三类奖励 | `training/` |
 | **3. 推理与评测** | 推理时动态调用工具；DriveLMM-o1 Judge + 工具使用指标 | `evaluation/` |
+
+## 🧩 两版流程
+
+仓库支持两种工具使用方式：**V1 是已发布的、论文对齐的基准流程；V2 是完整的多轮工具闭环扩展。**
+
+| | **V1 — 先规划 → 再执行 → 再作答** | **V2 — 多轮工具闭环** |
+|---|---|---|
+| 思路 | 先拆解问题、判断工具，再执行计划，最后基于观测作答 | 模型逐轮调用工具，读取观测后继续推理 |
+| 工具决策 | 一次性生成结构化 Tool-CoT 计划 | 每轮自适应决策 |
+| 工具输出 | 预先计算一次并复用 | 在线执行并回填上下文 |
+| 训练 | SFT 阶段一/二；可选单轮 GRPO（`MULTI_TURN=false`） | SFT 阶段一/二 + 多轮 GRPO（`MULTI_TURN=true`，默认） |
+| 推理 | `inference_withtool.py` → `gen_tool_result_data.py` → `inference_agentthink.py` | `inference_agentthink_live.py` |
+| 评测 | 终答 + 基于预计算观测的 Judge | 终答 + `tool_trace`、轮数、工具成功率 |
+| 是否对应已发布基准 | 是，这是发布版路径 | 否，是合理扩展 |
+| 成本 | 较低且确定 | 较高，每条样本需要对应 pickle |
+
+### V1：基础版（先规划，再执行）
+
+1. 生成 Tool-CoT 计划：子问题、工具名与参数、最终答案（`inference_withtool.py`，或 GPT-4o 数据生成管线）。
+2. 在 Agent-Driver 感知 pickle 上执行计划（`gen_tool_result_data.py`）→ `tool_result`。
+3. 基于这些观测作答（`inference_agentthink.py`）。
+
+这就是“拆解问题 / 判断工具 → 调工具 → 回答并完善思维链”的流程，也是复现论文基准数字所用的路径；发布版 `DriveLMMo1_TEST_tool_results.jsonl` 对应的就是它。
+
+### V2：闭环版（多轮）
+
+模型输出 `Tool: name([...])`，环境执行工具，把观测追加到同一个 assistant continuation，然后继续生成，最多 6 轮。训练侧由 `AgentThinkToolScheduler` 走同一闭环（观测 token 不计 loss），推理侧由 `inference_agentthink_live.py` 执行。如果要训练或评测“工具使用行为”本身，用这一版；如果只是复现发布数字，用 V1。
 
 ## ⚙️ 环境安装
 
