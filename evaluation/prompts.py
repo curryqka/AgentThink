@@ -71,6 +71,24 @@ TOOL_COT_PROMPT = (
     'DO NOT START WITH "```json" OR ANYTHING ELSE.'
 )
 
+#: Prompt used by live tool inference. The environment appends a
+#: ``Tool Output: ...`` block after every call; generation continues until the
+#: model emits a final answer or the turn limit is reached.
+LIVE_TOOL_PROMPT = (
+    "Answer the question using the following format. You may call tools; the "
+    "environment will return their observations in a Tool Output block.\n\n"
+    "**Step-by-Step Reasoning**:\n"
+    "Step 1: <reasoning sub-question>\n"
+    "Tool: <tool_name>([<parameters>])\n"
+    "Tool Output: <filled by the environment>\n"
+    "Step 2: <continue reasoning using the observation>\n"
+    "...\n"
+    "**Final Answer**: <answer>\n\n"
+    "Use only tools from the AgentThink tool library. Stop when the final "
+    "answer is determined.\n"
+    "Question: "
+)
+
 #: Prefix appended to the question when tool results have already been retrieved
 #: (full AgentThink inference, ``evaluation/inference_agentthink.py``).
 TOOL_RESULT_TEMPLATE = (

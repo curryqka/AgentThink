@@ -287,13 +287,14 @@ Hardware guidance (1/2/4/8 GPUs), reward details and troubleshooting:
 
 ## 3. Inference
 
-Three modes answer three different questions:
+Four modes cover the planning/execution split:
 
 | Command | Input | Purpose |
 |---|---|---|
 | `evaluation/inference.py` | `DriveLMMo1_TEST.jsonl` | plain CoT baseline |
 | `evaluation/inference_withtool.py` | `DriveLMMo1_TEST.jsonl` + tool catalog | structured **tool planning** (no execution) |
-| `evaluation/inference_agentthink.py` | `DriveLMMo1_TEST_tool_results.jsonl` | **AgentThink**: answer conditioned on tool observations |
+| `evaluation/inference_agentthink.py` | `DriveLMMo1_TEST_tool_results.jsonl` | **AgentThink**: answer conditioned on precomputed observations |
+| `evaluation/inference_agentthink_live.py` | same JSONL + Agent-Driver pickles | **live loop**: call → execute → observe → next turn |
 
 ```bash
 CKPT=pretrained_model/AgentThink
@@ -301,6 +302,8 @@ CKPT=pretrained_model/AgentThink
 bash scripts/inference_scripts/inference.sh           "$CKPT" baseline
 bash scripts/inference_scripts/inference_withtool.sh  "$CKPT" toolcot
 bash scripts/inference_scripts/inference_agentthink.sh "$CKPT" AgentThink
+bash scripts/inference_scripts/inference_agentthink_live.sh "$CKPT" AgentThink_live \
+    --tool-data-path data/tool_results --pickle-split val --max-turns 6
 ```
 
 All scripts take `--limit N` for a smoke test and support `torchrun` through
@@ -419,10 +422,12 @@ AgentThink/
 ├── evaluation/
 │   ├── prompts.py                # all model-visible prompts
 │   ├── runner.py                 # shared dataset / distributed / generation
+│   ├── live_runner.py            # live call→execute→observe loop
 │   ├── inference.py              # plain CoT
 │   ├── inference_withtool.py     # structured tool planning
-│   ├── inference_agentthink.py   # AgentThink with tool observations
-│   ├── evaluation_script.py      # DriveLMM-o1 judge + MCQ
+│   ├── inference_agentthink.py   # AgentThink with precomputed observations
+│   ├── inference_agentthink_live.py
+│   ├── evaluation_script.py      # DriveLMM-o1 judge + MCQ + trajectory metrics
 │   ├── tool_metrics.py           # Table 2 tool-use metrics
 │   └── prepare_data.py           # tool-result JSON -> evaluation JSONL
 ├── Inference/
@@ -437,6 +442,9 @@ AgentThink/
 │       ├── tool_libraries_simple.py
 │       ├── function_schema.py    # tool catalog rendering
 │       ├── tool_chain.py         # Tool-CoT parsing / validation
+│       ├── tool_runtime.py       # shared tool executor (train + inference)
+│       ├── multi_turn.py         # GRPO multi-turn scheduler
+│       ├── agentthink_plugin.py  # ms-swift reward + scheduler plugin
 │       ├── chain_render.py       # training trace rendering
 │       ├── agentthink_data_generater_pipeline.py
 │       ├── gen_tool_result_data.py
@@ -472,7 +480,8 @@ See [training/README.md](training/README.md#2-hardware).
 It is the tool **planner**: it emits the structured chain that
 `gen_tool_result_data.py` executes. The answering script is
 `inference_agentthink.py`. This separation is what the paper calls the data
-generation and inference stages.
+generation and inference stages. For a live tool loop that plans, executes and
+answers in one process, use `inference_agentthink_live.py`.
 
 **Where does `tool_result` come from?**
 

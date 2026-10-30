@@ -132,6 +132,13 @@ class DriveLMMo1Dataset(torch.utils.data.Dataset):
                 f"{tool_result}"
             )
 
+        parts = str(data_id).split("_")
+        metadata = {
+            "frame_token": data.get("frame_token")
+            or (parts[1] if len(parts) > 1 else ""),
+            "camera_paths": data.get("camera_paths") or [],
+            "system_prompts": data.get("system_prompts") or "",
+        }
         return {
             # The single ``<image>`` placeholder is added by ``generate()``;
             # repeating it here would send two placeholders for one image.
@@ -140,6 +147,7 @@ class DriveLMMo1Dataset(torch.utils.data.Dataset):
             "answer": answer,
             "reason": reason,
             "data_id": data_id,
+            "metadata": metadata,
         }
 
 
@@ -151,6 +159,7 @@ def collate_fn(batches: Sequence[dict], tokenizer: Any = None):
         [item["answer"] for item in batches],
         [item["reason"] for item in batches],
         [item["data_id"] for item in batches],
+        [item["metadata"] for item in batches],
     )
 
 
@@ -311,7 +320,7 @@ def evaluate_model(
     )
 
     outputs: List[dict] = []
-    for images, questions, answers, reasons, data_ids in tqdm(
+    for images, questions, answers, reasons, data_ids, _ in tqdm(
         dataloader, desc="Generating", disable=torch.distributed.get_rank() != 0
     ):
         preds = generate(

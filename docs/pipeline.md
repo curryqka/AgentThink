@@ -114,8 +114,9 @@ python evaluation/prepare_data.py \
 ```
 
 Fields: `id`, `image`, `conversations` (question / final answer / reference
-steps), `tool_result`, `system_prompts`. The plain test set used by the baseline
-can be built from the raw JSON with the same script:
+steps), `tool_result`, `system_prompts`, plus `frame_token` and `camera_paths`
+for live tool execution. The plain test set used by the baseline can be built
+from the raw JSON with the same script:
 
 ```bash
 python evaluation/prepare_data.py \
@@ -140,7 +141,8 @@ Three scripts, three different questions:
 |---|---|---|---|
 | `evaluation/inference.py` | `DriveLMMo1_TEST.jsonl` | plain CoT answer | answer text |
 | `evaluation/inference_withtool.py` | `DriveLMMo1_TEST.jsonl` + tool catalog | plans a Tool-CoT chain | `tool_chain` JSON + validation |
-| `evaluation/inference_agentthink.py` | `DriveLMMo1_TEST_tool_results.jsonl` | answers with retrieved tool observations | answer text |
+| `evaluation/inference_agentthink.py` | `DriveLMMo1_TEST_tool_results.jsonl` | answers with precomputed tool observations | answer text |
+| `evaluation/inference_agentthink_live.py` | same JSONL + Agent-Driver pickles | call → execute → observe → next turn | answer + `tool_trace` + `num_turns` |
 
 ```bash
 CKPT=pretrained_model/AgentThink
@@ -151,8 +153,12 @@ bash scripts/inference_scripts/inference.sh "$CKPT" qwen7b_cot
 # Structured tool planning (no execution)
 bash scripts/inference_scripts/inference_withtool.sh "$CKPT" toolcot
 
-# Full AgentThink
+# Full AgentThink (precomputed observations)
 bash scripts/inference_scripts/inference_agentthink.sh "$CKPT" AgentThink
+
+# Live tool loop (executes tools during generation)
+bash scripts/inference_scripts/inference_agentthink_live.sh "$CKPT" AgentThink_live \
+    --tool-data-path data/tool_results --pickle-split val --max-turns 6
 ```
 
 All three accept `--limit` for a smoke test and `NPROC_PER_NODE`/`torchrun` for
@@ -179,6 +185,10 @@ Outputs `*.json` (per sample), `*.csv`, and `*.summary.json` with the seven
 columns of Table 3 (`Risk Assess.`, `Rule Adh.`, `Scene Aware.`, `Relevance`,
 `Missing`, `Reason.`, `MCQ`) plus the three tool metrics of Table 5 when
 `--tool-metrics` is set.
+
+When the prediction file comes from the live loop, the judge also receives the
+executed trajectory (`tool_trace`), and the summary adds automatic
+`Avg Turns`, `Avg Tool Calls` and `Tool Success` fields.
 
 Cost control: `--limit 50` first; the judge is the only paid component.
 
@@ -224,4 +234,5 @@ Because it is not model output: `tool_result` = executed tool observations,
 **Why does `inference_demo_*.py` read a fixed tool list from the demo JSON?**
 The demos illustrate the runtime tool interface without requiring a trained
 planner. For end-to-end planning use `inference_withtool.py` →
-`gen_tool_result_data.py` → `inference_agentthink.py`.
+`gen_tool_result_data.py` → `inference_agentthink.py`, or use
+`inference_agentthink_live.py` to plan, execute and answer in one loop.

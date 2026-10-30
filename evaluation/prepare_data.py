@@ -44,9 +44,12 @@ def build_records(records: Iterable[dict], image_pattern: str) -> List[dict]:
         steps = item.get("steps", "")
         if not question or final_answer is None:
             continue
+        parts = str(idx).split("_")
         output.append(
             {
                 "id": idx,
+                "frame_token": parts[1] if len(parts) > 1 else "",
+                "camera_paths": item.get("image", []),
                 "image": image_name(str(idx), image_pattern),
                 "conversations": [
                     {"from": "human", "value": question},
