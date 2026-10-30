@@ -43,6 +43,7 @@ This philosophy is the design principle of AgentThink: combine multiple driving 
 - [Highlights](#-highlights)
 - [News](#-news)
 - [Framework](#-framework)
+- [Two pipeline versions](#-two-pipeline-versions)
 - [Installation](#-installation)
 - [Model & data](#-model--data)
 - [Pipeline at a glance](#-pipeline-at-a-glance)
@@ -90,6 +91,43 @@ AgentThink has three components, mirroring Sec. 3 of the paper:
 | **1. Data generation** | GPT-4o turns reference CoT into structured Tool-CoT; driving tools are executed on Agent-Driver perception results ([tool inventory](docs/tool_library.md)) | `scripts/tools/` |
 | **2. Two-stage training** | LoRA SFT (phase 1: actions, phase 2: actions + observations) followed by GRPO with three rewards | `training/` |
 | **3. Inference & evaluation** | Dynamic tool invocation at inference; DriveLMM-o1 judge + tool-use metrics | `evaluation/` |
+
+## 🧩 Two pipeline versions
+
+The repository supports two levels of tool use. **V1 is the released,
+paper-aligned benchmark path; V2 is the full closed-loop agent extension.**
+
+| | **V1 — Plan → Execute → Answer** | **V2 — Multi-turn closed loop** |
+|---|---|---|
+| Idea | First decompose the question and decide tools, then execute the plan, then answer with the observations | The model calls tools turn by turn, reads observations, and continues reasoning |
+| Tool decisions | one structured Tool-CoT plan | adaptive, one decision per turn |
+| Tool outputs | precomputed once and reused | executed live and fed back |
+| Training | SFT phase 1/2; optional single-turn GRPO (`MULTI_TURN=false`) | SFT phase 1/2 + multi-turn GRPO (`MULTI_TURN=true`, default) |
+| Inference | `inference_withtool.py` → `gen_tool_result_data.py` → `inference_agentthink.py` | `inference_agentthink_live.py` |
+| Evaluation | final answer + judge over precomputed observations | final answer + `tool_trace`, turns, tool success |
+| Reproduces the released benchmark | yes, this is the released path | no, a reasonable extension |
+| Cost | lower and deterministic | higher; needs one pickle per sample |
+
+### V1: basic version (plan, then execute)
+
+1. Build the Tool-CoT plan: sub-questions, tool names/parameters and the final
+   answer (`inference_withtool.py`, or the GPT-4o data pipeline).
+2. Execute the plan on Agent-Driver perception pickles
+   (`gen_tool_result_data.py`) → `tool_result`.
+3. Answer conditioned on those observations (`inference_agentthink.py`).
+
+This is the “decompose / choose tools → call tools → answer” flow used for the
+reported benchmark numbers. It is deterministic and is what the released
+`DriveLMMo1_TEST_tool_results.jsonl` corresponds to.
+
+### V2: closed-loop version (multi-turn)
+
+The model emits `Tool: name([...])`, the environment executes it, the observation
+is appended to the same assistant continuation, and generation continues for up
+to six turns. The same loop is used in GRPO
+(`AgentThinkToolScheduler`, observations masked from the loss) and in
+`inference_agentthink_live.py`. Use this version when you want to train or
+measure tool-use behavior itself rather than reproduce the released numbers.
 
 ## ⚙️ Installation
 
